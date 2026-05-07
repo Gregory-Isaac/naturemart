@@ -1,0 +1,12 @@
+{
+    "chat.agent.maxRequests": 50000000000000,
+    "chat.agent.sandbox.fileSystem.mac": {
+        "denyRead": [],
+        "allowRead": [],
+        "allowWrite": [
+            "."
+        ],
+        "denyWrite": []
+    },
+    "chat.agent.sandbox.enabled": "on"
+}
