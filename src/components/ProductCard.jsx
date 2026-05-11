@@ -1,83 +1,93 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { motion } from 'framer-motion';
-import { FiPlus, FiHeart } from 'react-icons/fi';
+import { FiPlus, FiHeart, FiArrowUpRight } from 'react-icons/fi';
 import { useWishlist } from '../context/WishlistContext';
 import { useNotification } from './Notification';
+import { getImageUrl, handleImageFallback } from '../utils/imageUrl';
 
 export default function ProductCard({ product }) {
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const { addNotification } = useNotification();
 
-  const handleAddToCart = () => {
+  const price = Number(product.price || 0);
+
+  const handleAddToCart = (event) => {
+    event.preventDefault();
     addToCart(product);
-    addNotification(`${product.name} added to cart! 🛒`);
+    addNotification(`${product.name} added to cart`, 'success');
   };
 
-  const handleToggleWishlist = (e) => {
-    e.stopPropagation();
+  const handleToggleWishlist = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
     toggleWishlist(product);
     const isNowIn = !isInWishlist(product.id);
-    addNotification(isNowIn ? `Added to wishlist! ❤️` : `Removed from wishlist! 💔`, isNowIn ? 'success' : 'info');
+    addNotification(isNowIn ? 'Added to wishlist' : 'Removed from wishlist', isNowIn ? 'success' : 'info');
   };
 
   return (
-    <motion.div 
+    <motion.article
       whileHover={{ y: -8 }}
-      className="glass-panel rounded-2xl overflow-hidden group flex flex-col h-full"
+      transition={{ duration: 0.22 }}
+      className="group h-full"
     >
-      <div className="relative overflow-hidden aspect-square bg-[#111]">
-        <img 
-          src={product.image} 
-          alt={product.name} 
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-80 group-hover:opacity-100"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        
-        {/* Wishlist Button */}
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={handleToggleWishlist}
-          className={`absolute top-4 right-4 p-2 rounded-full glass border border-white/10 z-20 transition-colors ${
-            isInWishlist(product.id) ? 'text-red-500 bg-red-500/10' : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          <FiHeart size={18} fill={isInWishlist(product.id) ? "currentColor" : "none"} />
-        </motion.button>
-      </div>
-      
-      <div className="p-6 flex flex-col flex-grow">
-        <div className="flex justify-between items-start mb-2">
-          <div>
-            <span className="text-xs font-semibold text-lime-400 tracking-wider uppercase mb-1 block">
-              {product.category}
-            </span>
-            <h3 className="text-lg font-bold text-white leading-tight">
-              {product.name}
-            </h3>
+      <Link to={`/product/${product.id}`} className="premium-card flex h-full flex-col overflow-hidden">
+        <div className="relative aspect-square overflow-hidden bg-[#11120d]">
+          <img
+            src={getImageUrl(product.image)}
+            alt={product.name}
+            onError={handleImageFallback(product)}
+            className="h-full w-full object-contain p-7 transition duration-700 group-hover:scale-105"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-white/[0.03]" />
+          <div className="absolute left-4 top-4 rounded-md border border-white/10 bg-black/35 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-[var(--nm-gold)] backdrop-blur">
+            {product.category || 'Reserve'}
           </div>
-        </div>
-        
-        <p className="text-gray-400 text-sm mb-6 flex-grow line-clamp-2">
-          {product.description}
-        </p>
-        
-        <div className="flex items-center justify-between mt-auto">
-          <span className="text-2xl font-light text-white">
-            ${product.price.toFixed(2)}
-          </span>
-          <motion.button 
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleAddToCart}
-            className="w-10 h-10 rounded-full bg-gradient-to-r from-emerald-500 to-lime-500 flex items-center justify-center text-black shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 transition-shadow"
+
+          <motion.button
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.94 }}
+            onClick={handleToggleWishlist}
+            className={`absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-md border border-white/10 bg-black/35 backdrop-blur transition-colors ${
+              isInWishlist(product.id) ? 'text-red-500' : 'text-white hover:text-red-300'
+            }`}
+            aria-label={`${isInWishlist(product.id) ? 'Remove' : 'Add'} ${product.name} from wishlist`}
           >
-            <FiPlus size={20} />
+            <FiHeart size={18} fill={isInWishlist(product.id) ? 'currentColor' : 'none'} />
           </motion.button>
         </div>
-      </div>
-    </motion.div>
+
+        <div className="flex flex-1 flex-col p-5">
+          <div className="mb-3 flex items-start justify-between gap-4">
+            <h3 className="text-lg font-black leading-tight text-[var(--nm-ink)]">
+              {product.name}
+            </h3>
+            <FiArrowUpRight className="mt-1 shrink-0 text-[var(--nm-muted)] transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-[var(--nm-gold)]" />
+          </div>
+
+          <p className="mb-6 line-clamp-2 flex-1 text-sm leading-6 text-[var(--nm-muted)]">
+            {product.description}
+          </p>
+
+          <div className="mt-auto flex items-center justify-between gap-4 border-t border-white/10 pt-4">
+            <span className="text-2xl font-black text-[var(--nm-ink)]">
+              ${price.toFixed(2)}
+            </span>
+            <motion.button
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
+              onClick={handleAddToCart}
+              className="grid h-11 w-11 place-items-center rounded-md bg-[var(--nm-ink)] text-black shadow-lg shadow-black/20 transition-colors hover:bg-[var(--nm-green)]"
+              aria-label={`Add ${product.name} to cart`}
+            >
+              <FiPlus size={20} />
+            </motion.button>
+          </div>
+        </div>
+      </Link>
+    </motion.article>
   );
 }

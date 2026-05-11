@@ -26,10 +26,10 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
+    "start": "node scripts/react-scripts-no-deprecation.js start",
+    "build": "node scripts/react-scripts-no-deprecation.js build",
+    "test": "node scripts/react-scripts-no-deprecation.js test",
+    "eject": "node scripts/react-scripts-no-deprecation.js eject",
     "seed": "node seed.js"
   },
   "eslintConfig": {

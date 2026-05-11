@@ -1,6 +1,8 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import os
+import re
+import sqlite3
 import pymysql
 import requests
 import datetime
@@ -26,9 +28,105 @@ gemini_model = genai.GenerativeModel('gemini-1.5-flash')
 
 app.config['UPLOAD_FOLDER'] = os.path.join("static", "Images")
 app.config['SECRET_KEY'] = os.getenv("JWT_SECRET", "secret123")
+app.config['ADMIN_PASSWORD'] = os.getenv("ADMIN_PASSWORD", "4734")
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
+# ── Database mode ─────────────────────────────────────────────────────────────
+USE_LOCAL_DB = os.getenv("LOCAL_DB", "false").lower() == "true"
+SQLITE_PATH  = os.path.join(os.path.dirname(__file__), "naturemart.db")
+
+
+class _SQLiteCursor:
+    """Thin wrapper: translates %s → ?, returns plain dicts."""
+    def __init__(self, cur):
+        self._cur = cur
+
+    @staticmethod
+    def _fix(sql):
+        return re.sub(r'%s', '?', sql)
+
+    def execute(self, sql, args=()):
+        self._cur.execute(self._fix(sql), args)
+
+    def fetchone(self):
+        row = self._cur.fetchone()
+        return dict(row) if row else None
+
+    def fetchall(self):
+        return [dict(r) for r in self._cur.fetchall()]
+
+    def __enter__(self):  return self
+    def __exit__(self, *_): pass
+
+
+class _SQLiteConn:
+    """Singleton SQLite connection; close() is a no-op so finally blocks work."""
+    _inst = None
+
+    def __new__(cls):
+        if cls._inst is None:
+            conn = sqlite3.connect(SQLITE_PATH, check_same_thread=False)
+            conn.row_factory = sqlite3.Row
+            cls._inst = object.__new__(cls)
+            cls._inst._conn = conn
+            cls._inst._bootstrap()
+        return cls._inst
+
+    def _bootstrap(self):
+        """Create tables if they don't exist yet."""
+        self._conn.executescript("""
+            CREATE TABLE IF NOT EXISTS users (
+                id       INTEGER PRIMARY KEY AUTOINCREMENT,
+                name     TEXT    NOT NULL,
+                email    TEXT    NOT NULL UNIQUE,
+                password TEXT    NOT NULL,
+                phone    TEXT    DEFAULT '',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE IF NOT EXISTS products (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                name        TEXT,
+                description TEXT,
+                price       REAL,
+                image       TEXT,
+                category    TEXT    DEFAULT 'General',
+                stock       INTEGER DEFAULT 0,
+                created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE IF NOT EXISTS orders (
+                id               INTEGER PRIMARY KEY AUTOINCREMENT,
+                userId           INTEGER,
+                status           TEXT DEFAULT 'pending',
+                trackingNumber   TEXT,
+                deliveryPartner  TEXT,
+                estimatedDelivery TEXT,
+                createdAt        DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE IF NOT EXISTS messages (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                sender_id   INTEGER,
+                receiver_id INTEGER,
+                message     TEXT,
+                is_read     INTEGER DEFAULT 0,
+                createdAt   DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+        self._conn.commit()
+
+    def cursor(self):
+        return _SQLiteCursor(self._conn.cursor())
+
+    def commit(self):
+        self._conn.commit()
+
+    def close(self):
+        pass  # singleton – stay open
+
+
 def get_db_connection():
+    """Return a DB connection (SQLite locally, MySQL in production)."""
+    if USE_LOCAL_DB:
+        return _SQLiteConn()
     return pymysql.connect(
         host=os.getenv("DB_HOST"),
         user=os.getenv("DB_USER"),
@@ -36,6 +134,25 @@ def get_db_connection():
         database=os.getenv("DB_NAME"),
         cursorclass=pymysql.cursors.DictCursor
     )
+
+@app.route("/api/db_status", methods=["GET"])
+def db_status():
+    """Check if the database connection is working."""
+    connection = None
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+        return jsonify({
+            "success": True, 
+            "message": "Database connected successfully",
+            "mode": "Local (SQLite)" if USE_LOCAL_DB else "Remote (MySQL)"
+        })
+    except Exception as e:
+        return jsonify({"success": False, "message": f"Database connection failed: {str(e)}"}), 500
+    finally:
+        if connection:
+            connection.close()
 
 # JWT Decorator
 def token_required(f):
@@ -60,6 +177,37 @@ def token_required(f):
     
     return decorated
 
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        admin_password = request.headers.get("X-Admin-Password", "")
+        if admin_password != app.config['ADMIN_PASSWORD']:
+            return jsonify({'success': False, 'message': 'Admin password is incorrect.'}), 401
+        return f(*args, **kwargs)
+
+    return decorated
+
+
+def normalize_mpesa_phone(phone):
+    digits = re.sub(r'\D', '', str(phone or ''))
+
+    if digits.startswith('254') and len(digits) == 12:
+        normalized = digits
+    elif digits.startswith('0') and len(digits) == 10:
+        normalized = '254' + digits[1:]
+    elif digits.startswith('7') and len(digits) == 9:
+        normalized = '254' + digits
+    elif digits.startswith('1') and len(digits) == 9:
+        normalized = '254' + digits
+    else:
+        return None
+
+    if re.fullmatch(r'254(7|1)\d{8}', normalized):
+        return normalized
+
+    return None
+
+
 @app.route("/api/signup", methods=["POST"])
 def signup():
     data = request.json
@@ -74,6 +222,7 @@ def signup():
     # Hash the password
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
+    connection = None
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
@@ -89,7 +238,8 @@ def signup():
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
-        connection.close()
+        if connection:
+            connection.close()
 
 @app.route("/api/signin", methods=["POST"])
 def signin():
@@ -100,6 +250,7 @@ def signin():
     if not email or not password:
         return jsonify({"success": False, "message": "Missing email or password"}), 400
 
+    connection = None
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
@@ -127,7 +278,8 @@ def signin():
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
-        connection.close()
+        if connection:
+            connection.close()
 
 @app.route("/api/google_auth", methods=["POST"])
 def google_auth():
@@ -279,8 +431,8 @@ def github_auth():
             connection.close()
 
 @app.route("/api/add_product", methods=["POST"])
-@token_required
-def add_product(current_user_id):
+@admin_required
+def add_product():
     product_name = request.form.get("name")
     product_description = request.form.get("description")
     product_price = request.form.get("price")
@@ -294,6 +446,7 @@ def add_product(current_user_id):
         photo_path = os.path.join(app.config["UPLOAD_FOLDER"], products_photo.filename)
         products_photo.save(photo_path)
 
+    connection = None
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
@@ -304,10 +457,12 @@ def add_product(current_user_id):
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
-        connection.close()
+        if connection:
+            connection.close()
 
 @app.route("/api/get_products", methods=["GET"])
 def get_products():
+    connection = None
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
@@ -318,25 +473,49 @@ def get_products():
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
-        connection.close()
+        if connection:
+            connection.close()
 
 @app.route('/api/mpesa_payment', methods=['POST'])
 def mpesa_payment():
-    data = request.json
+    data = request.get_json(silent=True) or {}
     amount = data.get('amount')
-    phone = data.get('phone')
+    raw_phone = data.get('phone', '')
+    phone = normalize_mpesa_phone(raw_phone)
     
     consumer_key = os.getenv("MPESA_CONSUMER_KEY", "GTWADFxIpUfDoNikNGqq1C3023evM6UH")
     consumer_secret = os.getenv("MPESA_CONSUMER_SECRET", "amFbAoUByPV2rM5A")
  
     try:
+        if not phone:
+            return jsonify({
+                "success": False,
+                "message": "Enter a valid Safaricom number, for example 0712345678 or 254712345678."
+            }), 400
+
+        try:
+            amount = int(float(amount))
+        except (TypeError, ValueError):
+            return jsonify({"success": False, "message": "Enter a valid payment amount."}), 400
+
+        amount = max(amount, 1)
+
         api_URL = "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
-        r = requests.get(api_URL, auth=HTTPBasicAuth(consumer_key, consumer_secret))
-        access_token = "Bearer " + r.json()['access_token']
+        r = requests.get(api_URL, auth=HTTPBasicAuth(consumer_key, consumer_secret), timeout=30)
+        token_data = r.json()
+        if r.status_code != 200 or "access_token" not in token_data:
+            return jsonify({
+                "success": False,
+                "message": "Could not authenticate with M-Pesa. Check your Daraja consumer key and secret.",
+                "details": token_data
+            }), 502
+
+        access_token = "Bearer " + token_data['access_token']
  
         timestamp = datetime.datetime.today().strftime('%Y%m%d%H%M%S')
         passkey = os.getenv("MPESA_PASSKEY", 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919')
-        business_short_code = "174379"
+        business_short_code = os.getenv("MPESA_SHORTCODE", "174379")
+        callback_url = os.getenv("MPESA_CALLBACK_URL", "https://gregoryisaac.alwaysdata.net/api/mpesa_callback")
         password_data = business_short_code + passkey + timestamp
         password = base64.b64encode(password_data.encode()).decode('utf-8')
  
@@ -349,7 +528,7 @@ def mpesa_payment():
             "PartyA": phone,
             "PartyB": business_short_code,
             "PhoneNumber": phone,
-            "CallBackURL": "https://gregoryisaac.alwaysdata.net/api/confirmation.php",
+            "CallBackURL": callback_url,
             "AccountReference": "NatureMart",
             "TransactionDesc": "Payment for order"
         }
@@ -357,13 +536,31 @@ def mpesa_payment():
         headers = {"Authorization": access_token, "Content-Type": "application/json"}
         url = "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
  
-        response = requests.post(url, json=payload, headers=headers)
-        return jsonify({"success": True, "message": "Please complete payment on your phone", "details": response.json()})
+        response = requests.post(url, json=payload, headers=headers, timeout=30)
+        response_data = response.json()
+        if response.status_code == 200 and response_data.get("ResponseCode") == "0":
+            return jsonify({
+                "success": True,
+                "message": "Please complete payment on your phone",
+                "details": response_data
+            })
+
+        return jsonify({
+            "success": False,
+            "message": response_data.get("errorMessage") or response_data.get("ResponseDescription") or "M-Pesa rejected the STK push request.",
+            "details": response_data
+        }), 400
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
 
+
+@app.route('/api/mpesa_callback', methods=['POST'])
+def mpesa_callback():
+    return jsonify({"success": True, "message": "Callback received"})
+
 @app.route("/api/track_order/<int:order_id>", methods=["GET"])
 def track_order(order_id):
+    connection = None
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
@@ -378,7 +575,8 @@ def track_order(order_id):
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
-        connection.close()
+        if connection:
+            connection.close()
 
 @app.route("/api/update_tracking", methods=["POST"])
 @token_required
@@ -390,6 +588,7 @@ def update_tracking(current_user_id):
     delivery_partner = data.get("delivery_partner")
     estimated_delivery = data.get("estimated_delivery")
 
+    connection = None
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
@@ -404,11 +603,13 @@ def update_tracking(current_user_id):
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
-        connection.close()
+        if connection:
+            connection.close()
 
 @app.route("/api/user_orders", methods=["GET"])
 @token_required
 def get_user_orders(current_user_id):
+    connection = None
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
@@ -419,7 +620,8 @@ def get_user_orders(current_user_id):
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
-        connection.close()
+        if connection:
+            connection.close()
 
 @app.route("/api/chat", methods=["POST"])
 def chat():
@@ -475,6 +677,7 @@ def send_message(current_user_id):
     if not receiver_id or not message:
         return jsonify({"success": False, "message": "Missing receiver_id or message"}), 400
         
+    connection = None
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
@@ -485,11 +688,13 @@ def send_message(current_user_id):
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
-        connection.close()
+        if connection:
+            connection.close()
 
 @app.route("/api/messages/get/<int:other_user_id>", methods=["GET"])
 @token_required
 def get_messages(current_user_id, other_user_id):
+    connection = None
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
@@ -509,11 +714,13 @@ def get_messages(current_user_id, other_user_id):
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
-        connection.close()
+        if connection:
+            connection.close()
 
 @app.route("/api/messages/conversations", methods=["GET"])
 @token_required
 def get_conversations(current_user_id):
+    connection = None
     try:
         connection = get_db_connection()
         with connection.cursor() as cursor:
@@ -530,8 +737,9 @@ def get_conversations(current_user_id):
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
-        connection.close()
+        if connection:
+            connection.close()
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 5000))
+    port = int(os.getenv("FLASK_PORT", os.getenv("PORT", 5001)))
     app.run(debug=True, port=port)

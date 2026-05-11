@@ -10,64 +10,65 @@ export default function Footer() {
   const handleSubscribe = (e) => {
     e.preventDefault();
     if (email) {
-      addNotification("Welcome to the NatureMart community! 🌿", "success");
+      addNotification("Welcome to the NatureMart community", "success");
       setEmail("");
     }
   };
 
   return (
-    <footer className="border-t border-white/5 bg-[#050505] pt-24 pb-12 mt-20">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-1 lg:grid-cols-6 gap-16 mb-16">
-          
+    <footer className="border-t border-white/10 bg-[#080807] pt-20 pb-10">
+      <div className="premium-shell">
+        <div className="grid grid-cols-1 lg:grid-cols-6 gap-14 mb-14">
           <div className="lg:col-span-2">
-            <h2 className="text-3xl font-black tracking-tighter mb-6">
+            <span className="premium-kicker mb-4">NatureMart Reserve</span>
+            <h2 className="text-3xl font-black tracking-tighter mb-5">
               Nature<span className="text-gradient">Mart</span>
             </h2>
-            <p className="text-gray-400 text-sm leading-relaxed max-w-sm mb-8 font-light">
-              Elevating the organic lifestyle with uncompromising quality and sustainable practices. Join us in our journey towards a purer future.
+            <p className="premium-muted text-sm leading-7 max-w-sm mb-7">
+              Premium natural goods, clean daily rituals, and better essentials for a calmer shelf.
             </p>
-            <div className="flex gap-5">
-              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="p-3 rounded-full glass border border-white/5 text-gray-400 hover:text-white transition-all hover:scale-110"><FiTwitter size={18} /></a>
-              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="p-3 rounded-full glass border border-white/5 text-gray-400 hover:text-white transition-all hover:scale-110"><FiInstagram size={18} /></a>
-              <a href="https://github.com/Gregory-Isaac/naturemart" target="_blank" rel="noopener noreferrer" className="p-3 rounded-full glass border border-white/5 text-gray-400 hover:text-white transition-all hover:scale-110"><FiGithub size={18} /></a>
+            <div className="flex gap-3">
+              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" aria-label="Twitter" className="grid h-11 w-11 place-items-center rounded-md border border-white/10 bg-white/[0.035] text-[var(--nm-muted)] hover:text-white transition-all hover:-translate-y-0.5"><FiTwitter size={18} /></a>
+              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="grid h-11 w-11 place-items-center rounded-md border border-white/10 bg-white/[0.035] text-[var(--nm-muted)] hover:text-white transition-all hover:-translate-y-0.5"><FiInstagram size={18} /></a>
+              <a href="https://github.com/Gregory-Isaac/naturemart" target="_blank" rel="noopener noreferrer" aria-label="GitHub" className="grid h-11 w-11 place-items-center rounded-md border border-white/10 bg-white/[0.035] text-[var(--nm-muted)] hover:text-white transition-all hover:-translate-y-0.5"><FiGithub size={18} /></a>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 lg:col-span-2 gap-12">
-            <div>
-              <h3 className="text-white font-bold text-sm uppercase tracking-widest mb-6">Shop</h3>
-              <ul className="space-y-4">
-                <li><Link to="/shop" className="text-gray-400 hover:text-white text-sm transition-colors font-light">New Arrivals</Link></li>
-                <li><Link to="/shop" className="text-gray-400 hover:text-white text-sm transition-colors font-light">Skincare</Link></li>
-                <li><Link to="/shop" className="text-gray-400 hover:text-white text-sm transition-colors font-light">Wellness</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-white font-bold text-sm uppercase tracking-widest mb-6">Company</h3>
-              <ul className="space-y-4">
-                <li><Link to="/about" className="text-gray-400 hover:text-white text-sm transition-colors font-light">Our Story</Link></li>
-                <li><Link to="/contact" className="text-gray-400 hover:text-white text-sm transition-colors font-light">Contact</Link></li>
-                <li><Link to="/faq" className="text-gray-400 hover:text-white text-sm transition-colors font-light">FAQ</Link></li>
-                <li><Link to="/privacy" className="text-gray-400 hover:text-white text-sm transition-colors font-light">Privacy Policy</Link></li>
-              </ul>
-            </div>
+          <div className="grid grid-cols-2 lg:col-span-2 gap-10">
+            <FooterColumn
+              title="Shop"
+              links={[
+                ["New Arrivals", "/shop"],
+                ["Skincare", "/shop"],
+                ["Wellness", "/shop"],
+              ]}
+            />
+            <FooterColumn
+              title="Company"
+              links={[
+                ["Our Story", "/about"],
+                ["Contact", "/contact"],
+                ["FAQ", "/faq"],
+                ["Privacy Policy", "/privacy"],
+              ]}
+            />
           </div>
 
           <div className="lg:col-span-2">
-            <h3 className="text-white font-bold text-sm uppercase tracking-widest mb-6">Join Our Newsletter</h3>
-            <p className="text-gray-500 text-sm mb-6 font-light">Get the latest organic insights and exclusive offers.</p>
+            <h3 className="text-white font-bold text-sm uppercase tracking-widest mb-5">Private Notes</h3>
+            <p className="premium-muted text-sm mb-5">New drops, calm routines, and exclusive offers.</p>
             <form onSubmit={handleSubscribe} className="relative group">
-              <input 
-                type="email" 
+              <input
+                type="email"
                 placeholder="Email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 pr-16 text-white focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-gray-600 shadow-inner"
+                className="premium-input py-4 px-5 pr-16 placeholder:text-[var(--nm-soft)]"
               />
-              <button 
+              <button
                 type="submit"
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-3 bg-gradient-to-r from-emerald-500 to-lime-500 rounded-xl text-black shadow-lg hover:scale-105 active:scale-95 transition-all"
+                aria-label="Subscribe"
+                className="absolute right-2 top-1/2 -translate-y-1/2 grid h-10 w-10 place-items-center rounded-md bg-[var(--nm-ink)] text-black transition-all hover:bg-[var(--nm-green)] active:scale-95"
               >
                 <FiSend size={18} />
               </button>
@@ -75,14 +76,31 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 text-gray-500 text-[10px] uppercase tracking-widest font-bold">
+        <div className="pt-9 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-5 text-[var(--nm-soft)] text-[10px] uppercase tracking-widest font-bold">
           <p>&copy; {new Date().getFullYear()} NatureMart. All rights reserved.</p>
-          <div className="flex gap-8">
-            <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-white transition-colors">Cookie Policy</a>
+          <div className="flex gap-6">
+            <Link to="/privacy" className="hover:text-white transition-colors">Terms of Service</Link>
+            <Link to="/privacy" className="hover:text-white transition-colors">Cookie Policy</Link>
           </div>
         </div>
       </div>
     </footer>
+  );
+}
+
+function FooterColumn({ title, links }) {
+  return (
+    <div>
+      <h3 className="text-white font-bold text-sm uppercase tracking-widest mb-5">{title}</h3>
+      <ul className="space-y-3">
+        {links.map(([label, to]) => (
+          <li key={label}>
+            <Link to={to} className="premium-muted hover:text-white text-sm transition-colors">
+              {label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

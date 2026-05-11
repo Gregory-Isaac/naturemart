@@ -12,7 +12,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [searchParams] = useSearchParams();
   
-  const { login, googleLogin, githubLogin } = useAuth();
+  const { login, googleLogin, githubLogin, devLogin } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -71,6 +71,13 @@ export default function Login() {
 
   const handleGoogleError = () => {
     setError('Google Sign In failed. Please try again.');
+  };
+
+  const handleDirectLogin = () => {
+    const res = devLogin();
+    if (res.success) {
+      navigate('/');
+    }
   };
 
   return (
@@ -154,6 +161,13 @@ export default function Login() {
           >
             <FiGithub size={20} />
             <span>Continue with GitHub</span>
+          </button>
+
+          <button 
+            onClick={handleDirectLogin}
+            className="w-full bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 font-semibold py-2.5 rounded-full transition-all border border-white/5"
+          >
+            Direct Login (Dev Only)
           </button>
         </div>
 

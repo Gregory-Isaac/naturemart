@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiSearch, FiFilter } from 'react-icons/fi';
+import { FiAward, FiFilter, FiGrid, FiSearch, FiSliders } from 'react-icons/fi';
 import API from '../api/client';
 import ProductCard from '../components/ProductCard';
 
@@ -22,6 +22,7 @@ export default function Shop() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [sortMode, setSortMode] = useState("featured");
 
   const categories = ["All", "Skincare", "Lifestyle", "Supplements", "Wellness", "Organic"];
 
@@ -29,7 +30,7 @@ export default function Shop() {
     const fetchProducts = async () => {
       try {
         const res = await API.get('/get_products');
-        setProducts(res.data);
+        setProducts(Array.isArray(res.data) ? res.data : []);
         setLoading(false);
       } catch (error) {
         console.error("Error fetching products", error);
@@ -40,25 +41,40 @@ export default function Shop() {
   }, []);
 
   const filteredProducts = products.filter(p => {
-    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          p.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const name = String(p.name || '').toLowerCase();
+    const description = String(p.description || '').toLowerCase();
+    const matchesSearch = name.includes(searchQuery.toLowerCase()) || description.includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === "All" || p.category === selectedCategory;
     return matchesSearch && matchesCategory;
+  }).sort((a, b) => {
+    if (sortMode === 'price-low') return Number(a.price || 0) - Number(b.price || 0);
+    if (sortMode === 'price-high') return Number(b.price || 0) - Number(a.price || 0);
+    if (sortMode === 'name') return String(a.name || '').localeCompare(String(b.name || ''));
+    return 0;
   });
 
+  const categoryCount = selectedCategory === 'All'
+    ? products.length
+    : products.filter((product) => product.category === selectedCategory).length;
+
   return (
-    <div className="min-h-screen pt-12 pb-24 relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-emerald-500/10 rounded-full blur-[150px] pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-lime-500/5 rounded-full blur-[150px] pointer-events-none" />
-      
-      <div className="max-w-7xl mx-auto px-6 relative z-10">
+    <div className="premium-page pt-16 pb-24 relative overflow-hidden">
+      <div className="premium-shell relative z-10">
         {/* Header Section */}
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-16">
+        <div className="premium-card premium-veil p-6 md:p-10 mb-10">
+          <div className="relative z-10 flex flex-col lg:flex-row lg:items-end justify-between gap-8">
           <div className="max-w-2xl">
+            <motion.span
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="premium-kicker"
+            >
+              NatureMart Reserve
+            </motion.span>
             <motion.h1 
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="text-5xl md:text-7xl font-black tracking-tighter mb-4"
+              className="premium-heading text-5xl md:text-7xl mt-4 mb-4"
             >
               The <span className="text-gradient">Collection</span>
             </motion.h1>
@@ -66,27 +82,56 @@ export default function Shop() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-gray-400 text-lg font-light"
+              className="premium-muted text-lg leading-8"
             >
               Discover our hand-picked selection of premium natural products, designed to elevate your everyday life.
             </motion.p>
+            <div className="mt-8 grid grid-cols-3 gap-3 max-w-xl">
+              {[
+                ['Products', products.length || '--'],
+                ['Categories', categories.length - 1],
+                ['Standard', 'Reserve'],
+              ].map(([label, value]) => (
+                <div className="rounded-lg border border-white/10 bg-black/20 px-4 py-3" key={label}>
+                  <p className="text-2xl font-black text-white">{value}</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[var(--nm-soft)]">{label}</p>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="relative w-full lg:w-96"
+            className="w-full lg:w-[420px] space-y-3"
           >
-            <FiSearch className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-            <input 
-              type="text" 
-              placeholder="Search products..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-14 pr-6 text-white focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-gray-500"
-            />
+            <div className="relative">
+              <FiSearch className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--nm-muted)]" size={20} />
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="premium-input py-4 pl-14 pr-6 placeholder:text-[var(--nm-soft)]"
+              />
+            </div>
+            <div className="relative">
+              <FiSliders className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--nm-muted)]" size={18} />
+              <select
+                value={sortMode}
+                onChange={(event) => setSortMode(event.target.value)}
+                className="premium-input py-4 pl-14 pr-6 appearance-none"
+                aria-label="Sort products"
+              >
+                <option value="featured">Featured curation</option>
+                <option value="price-low">Price: low to high</option>
+                <option value="price-high">Price: high to low</option>
+                <option value="name">Name: A to Z</option>
+              </select>
+            </div>
           </motion.div>
+          </div>
         </div>
 
         {/* Categories Section */}
@@ -96,7 +141,7 @@ export default function Shop() {
           transition={{ delay: 0.3 }}
           className="flex flex-wrap items-center gap-3 mb-12"
         >
-          <div className="flex items-center gap-2 text-gray-500 mr-2">
+          <div className="flex items-center gap-2 text-[var(--nm-muted)] mr-2">
             <FiFilter size={18} />
             <span className="text-sm font-medium uppercase tracking-wider">Filter:</span>
           </div>
@@ -104,10 +149,10 @@ export default function Shop() {
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-300 border ${
+              className={`px-5 py-2.5 rounded-md text-xs font-black uppercase tracking-[0.12em] transition-all duration-300 border ${
                 selectedCategory === cat 
-                ? 'bg-gradient-to-r from-emerald-500 to-lime-500 text-black border-transparent shadow-lg shadow-emerald-500/20' 
-                : 'bg-white/5 text-gray-400 border-white/5 hover:bg-white/10 hover:border-white/20'
+                ? 'bg-[var(--nm-ink)] text-black border-transparent shadow-lg shadow-black/20' 
+                : 'bg-white/5 text-[var(--nm-muted)] border-white/10 hover:bg-white/10 hover:border-white/20'
               }`}
             >
               {cat}
@@ -115,11 +160,24 @@ export default function Shop() {
           ))}
         </motion.div>
 
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4 border-y border-white/10 py-4">
+          <div className="flex items-center gap-3 text-[var(--nm-muted)]">
+            <FiGrid className="text-[var(--nm-gold)]" />
+            <span className="text-sm">
+              Showing <strong className="text-white">{filteredProducts.length}</strong> of <strong className="text-white">{categoryCount}</strong> curated items
+            </span>
+          </div>
+          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.14em] text-[var(--nm-muted)]">
+            <FiAward className="text-[var(--nm-gold)]" />
+            Quality reviewed before dispatch
+          </div>
+        </div>
+
         {/* Product Grid */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-32 space-y-4">
-            <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
-            <p className="text-gray-400 font-light tracking-widest text-sm uppercase">Curating products...</p>
+            <div className="w-12 h-12 border-4 border-white/10 border-t-[var(--nm-gold)] rounded-full animate-spin"></div>
+            <p className="premium-muted font-bold tracking-widest text-sm uppercase">Curating products...</p>
           </div>
         ) : (
           <div className="space-y-12">
@@ -130,7 +188,7 @@ export default function Shop() {
                   variants={container} 
                   initial="hidden" 
                   animate="show" 
-                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
                 >
                   {filteredProducts.map(p => (
                     <motion.div variants={item} key={p._id || p.id}>
@@ -143,12 +201,12 @@ export default function Shop() {
                   key="empty"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="text-center py-32 glass rounded-3xl border border-white/5"
+                  className="text-center py-32 premium-card"
                 >
-                  <p className="text-gray-500 text-xl font-light mb-2">No products found matching your search.</p>
+                  <p className="text-[var(--nm-muted)] text-xl mb-2">No products found matching your search.</p>
                   <button 
                     onClick={() => {setSearchQuery(""); setSelectedCategory("All");}}
-                    className="text-emerald-500 hover:text-emerald-400 underline transition-colors"
+                    className="text-[var(--nm-gold)] hover:text-white underline transition-colors"
                   >
                     Clear all filters
                   </button>

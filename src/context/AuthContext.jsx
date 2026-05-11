@@ -91,8 +91,24 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('user');
   };
 
+  const devLogin = () => {
+    const mockUser = {
+      id: 'demo',
+      name: 'Premium Member',
+      email: 'premium@naturemart.com',
+      avatar: 'https://i.pravatar.cc/150?u=premium',
+      role: 'premium'
+    };
+    const mockToken = 'demo-token-123';
+    setToken(mockToken);
+    setUser(mockUser);
+    localStorage.setItem('token', mockToken);
+    localStorage.setItem('user', JSON.stringify(mockUser));
+    return { success: true };
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, login, googleLogin, githubLogin, signup, logout }}>
+    <AuthContext.Provider value={{ user, token, login, googleLogin, githubLogin, devLogin, signup, logout }}>
       {children}
     </AuthContext.Provider>
   );
