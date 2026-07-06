@@ -11,6 +11,7 @@ export default function Messages() {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -38,10 +39,12 @@ export default function Messages() {
       const res = await API.get('/messages/conversations');
       if (res.data.success) {
         setConversations(res.data.conversations);
+        setError("");
       }
       setLoading(false);
     } catch (error) {
       console.error("Error fetching conversations", error);
+      setError("Could not load your conversations. Please try again.");
       setLoading(false);
     }
   };
@@ -51,9 +54,11 @@ export default function Messages() {
       const res = await API.get(`/messages/get/${otherId}`);
       if (res.data.success) {
         setMessages(res.data.messages);
+        setError("");
       }
     } catch (error) {
       console.error("Error fetching messages", error);
+      setError("Could not load this conversation. Please try again.");
     }
   };
 
@@ -73,9 +78,13 @@ export default function Messages() {
           createdAt: new Date().toISOString() 
         }]);
         setNewMessage("");
+        setError("");
+      } else {
+        setError(res.data.message || "Message could not be sent.");
       }
     } catch (error) {
       console.error("Error sending message", error);
+      setError("Message failed to send. Please check your connection and try again.");
     }
   };
 
@@ -89,6 +98,12 @@ export default function Messages() {
 
   return (
     <div className="min-h-screen pt-20 pb-10 px-6">
+      {error && (
+        <div className="max-w-7xl mx-auto mb-4 flex items-center justify-between gap-4 rounded-2xl border border-red-500/30 bg-red-500/10 px-5 py-3 text-sm text-red-300">
+          <span>{error}</span>
+          <button onClick={() => setError("")} className="text-red-300/70 hover:text-white transition-colors text-xs uppercase tracking-widest">Dismiss</button>
+        </div>
+      )}
       <div className="max-w-7xl mx-auto h-[80vh] glass-panel rounded-[2.5rem] overflow-hidden flex border border-white/5 shadow-2xl">
         
         {/* Sidebar - Conversations */}

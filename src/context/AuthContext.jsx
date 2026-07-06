@@ -14,7 +14,17 @@ export const AuthProvider = ({ children }) => {
       // In a real app we would fetch the user profile from the backend
       // For now we trust the token in localStorage
       const savedUser = localStorage.getItem('user');
-      if (savedUser) setUser(JSON.parse(savedUser));
+      if (savedUser) {
+        try {
+          setUser(JSON.parse(savedUser));
+        } catch (error) {
+          console.error('Failed to parse saved user; clearing corrupted session', error);
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          setToken(null);
+          setUser(null);
+        }
+      }
     }
   }, [token]);
 

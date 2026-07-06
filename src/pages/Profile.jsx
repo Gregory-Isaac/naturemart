@@ -8,6 +8,7 @@ export default function Profile() {
   const { user, logout } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [ordersError, setOrdersError] = useState("");
   const [activeTab, setActiveTab] = useState('orders');
 
   useEffect(() => {
@@ -21,10 +22,14 @@ export default function Profile() {
       const res = await API.get('/user_orders');
       if (res.data.success) {
         setOrders(res.data.orders);
+        setOrdersError("");
+      } else {
+        setOrdersError(res.data.message || "Could not load your orders.");
       }
       setLoading(false);
     } catch (error) {
       console.error("Error fetching orders", error);
+      setOrdersError("Could not load your orders. Please try again.");
       setLoading(false);
     }
   };
@@ -105,6 +110,16 @@ export default function Profile() {
 
                 {loading ? (
                   <div className="py-20 text-center text-gray-500">Loading orders...</div>
+                ) : ordersError ? (
+                  <div className="py-20 text-center glass rounded-3xl border border-red-500/20">
+                    <p className="text-red-400 mb-4">{ordersError}</p>
+                    <button
+                      onClick={() => { setLoading(true); fetchOrders(); }}
+                      className="text-emerald-400 hover:text-white underline transition-colors"
+                    >
+                      Try again
+                    </button>
+                  </div>
                 ) : orders.length > 0 ? (
                   <div className="space-y-4">
                     {orders.map((order) => (

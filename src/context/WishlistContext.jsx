@@ -5,7 +5,15 @@ const WishlistContext = createContext();
 export const WishlistProvider = ({ children }) => {
     const [wishlist, setWishlist] = useState(() => {
         const saved = localStorage.getItem('naturemart_wishlist');
-        return saved ? JSON.parse(saved) : [];
+        if (!saved) return [];
+        try {
+            const parsed = JSON.parse(saved);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (error) {
+            console.error('Failed to parse saved wishlist; resetting it', error);
+            localStorage.removeItem('naturemart_wishlist');
+            return [];
+        }
     });
 
     useEffect(() => {

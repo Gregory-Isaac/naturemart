@@ -20,23 +20,28 @@ const item = {
 export default function Shop() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [sortMode, setSortMode] = useState("featured");
 
   const categories = ["All", "Skincare", "Lifestyle", "Supplements", "Wellness", "Organic"];
 
+  const fetchProducts = async () => {
+    setLoading(true);
+    try {
+      const res = await API.get('/get_products');
+      setProducts(Array.isArray(res.data) ? res.data : []);
+      setError("");
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching products", error);
+      setError("We couldn't load the collection right now. Please try again.");
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const res = await API.get('/get_products');
-        setProducts(Array.isArray(res.data) ? res.data : []);
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching products", error);
-        setLoading(false);
-      }
-    };
     fetchProducts();
   }, []);
 
@@ -178,6 +183,16 @@ export default function Shop() {
           <div className="flex flex-col items-center justify-center py-32 space-y-4">
             <div className="w-12 h-12 border-4 border-white/10 border-t-[var(--nm-gold)] rounded-full animate-spin"></div>
             <p className="premium-muted font-bold tracking-widest text-sm uppercase">Curating products...</p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-32 premium-card">
+            <p className="text-[var(--nm-muted)] text-xl mb-4">{error}</p>
+            <button
+              onClick={fetchProducts}
+              className="text-[var(--nm-gold)] hover:text-white underline transition-colors"
+            >
+              Retry
+            </button>
           </div>
         ) : (
           <div className="space-y-12">

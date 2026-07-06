@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 import os
 import re
+import logging
 import sqlite3
 import pymysql
 import requests
@@ -21,6 +22,12 @@ load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
+
+# Ensure handled exceptions are logged instead of being silently discarded.
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
 
 # Configure Gemini
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
@@ -149,6 +156,7 @@ def db_status():
             "mode": "Local (SQLite)" if USE_LOCAL_DB else "Remote (MySQL)"
         })
     except Exception as e:
+        app.logger.exception("Database status check failed")
         return jsonify({"success": False, "message": f"Database connection failed: {str(e)}"}), 500
     finally:
         if connection:
@@ -236,6 +244,7 @@ def signup():
         connection.commit()
         return jsonify({"success": True, "message": "User registered successfully!"})
     except Exception as e:
+        app.logger.exception("Unhandled error in %s %s", request.method, request.path)
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
         if connection:
@@ -276,6 +285,7 @@ def signin():
         else:
             return jsonify({"success": False, "message": "Invalid email or password"}), 401
     except Exception as e:
+        app.logger.exception("Unhandled error in %s %s", request.method, request.path)
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
         if connection:
@@ -339,6 +349,7 @@ def google_auth():
         # Invalid token
         return jsonify({"success": False, "message": "Invalid Google token!"}), 401
     except Exception as e:
+        app.logger.exception("Unhandled error in %s %s", request.method, request.path)
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
         if 'connection' in locals():
@@ -425,6 +436,7 @@ def github_auth():
         })
         
     except Exception as e:
+        app.logger.exception("Unhandled error in %s %s", request.method, request.path)
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
         if 'connection' in locals():
@@ -455,6 +467,7 @@ def add_product():
         connection.commit()
         return jsonify({"success": True, "message": "Product added successfully!"})
     except Exception as e:
+        app.logger.exception("Unhandled error in %s %s", request.method, request.path)
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
         if connection:
@@ -471,6 +484,7 @@ def get_products():
             products = cursor.fetchall()
         return jsonify(products)
     except Exception as e:
+        app.logger.exception("Unhandled error in %s %s", request.method, request.path)
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
         if connection:
@@ -551,6 +565,7 @@ def mpesa_payment():
             "details": response_data
         }), 400
     except Exception as e:
+        app.logger.exception("Unhandled error in %s %s", request.method, request.path)
         return jsonify({"success": False, "message": str(e)}), 500
 
 
@@ -573,6 +588,7 @@ def track_order(order_id):
         else:
             return jsonify({"success": False, "message": "Order not found"}), 404
     except Exception as e:
+        app.logger.exception("Unhandled error in %s %s", request.method, request.path)
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
         if connection:
@@ -601,6 +617,7 @@ def update_tracking(current_user_id):
         connection.commit()
         return jsonify({"success": True, "message": "Tracking updated successfully!"})
     except Exception as e:
+        app.logger.exception("Unhandled error in %s %s", request.method, request.path)
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
         if connection:
@@ -618,6 +635,7 @@ def get_user_orders(current_user_id):
             orders = cursor.fetchall()
         return jsonify({"success": True, "orders": orders})
     except Exception as e:
+        app.logger.exception("Unhandled error in %s %s", request.method, request.path)
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
         if connection:
@@ -660,8 +678,10 @@ def chat():
         bot_response = response.text
         
         return jsonify({"success": True, "response": bot_response})
-    except Exception as e:
-        # Fallback to simple response if Gemini fails or API key is missing
+    except Exception:
+        # Log the real failure, then fall back to a friendly response so the
+        # chat widget keeps working even if Gemini is down or misconfigured.
+        app.logger.exception("Gemini chat request failed; returning fallback response")
         return jsonify({
             "success": True, 
             "response": "I'm currently in a limited mode, but I can tell you that NatureMart offers the finest organic products! How else can I assist you? 🌿"
@@ -686,6 +706,7 @@ def send_message(current_user_id):
         connection.commit()
         return jsonify({"success": True, "message": "Message sent!"})
     except Exception as e:
+        app.logger.exception("Unhandled error in %s %s", request.method, request.path)
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
         if connection:
@@ -712,6 +733,7 @@ def get_messages(current_user_id, other_user_id):
         connection.commit()
         return jsonify({"success": True, "messages": messages})
     except Exception as e:
+        app.logger.exception("Unhandled error in %s %s", request.method, request.path)
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
         if connection:
@@ -735,6 +757,7 @@ def get_conversations(current_user_id):
             conversations = cursor.fetchall()
         return jsonify({"success": True, "conversations": conversations})
     except Exception as e:
+        app.logger.exception("Unhandled error in %s %s", request.method, request.path)
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
         if connection:
