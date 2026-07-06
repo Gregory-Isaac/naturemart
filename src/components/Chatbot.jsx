@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiMessageCircle, FiX, FiSend, FiMinimize2 } from 'react-icons/fi';
+import { FiMessageCircle, FiX, FiSend, FiMinimize2, FiTrash2 } from 'react-icons/fi';
+import API from '../api/client';
 
 const Chatbot = () => {
     const [isOpen, setIsOpen] = useState(false);
-    const [messages, setMessages] = useState([
-        { text: "Hi! I'm your NatureMart assistant. How can I help you today? 🌿", sender: 'bot' }
-    ]);
+    const WELCOME_MESSAGE = { text: "Hi! I'm your NatureMart AI assistant. Ask me anything — product questions, general knowledge, recommendations, or just chat! 🌿", sender: 'bot' };
+    const [messages, setMessages] = useState([WELCOME_MESSAGE]);
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef(null);
@@ -29,13 +29,9 @@ const Chatbot = () => {
         setIsLoading(true);
 
         try {
-            const response = await fetch('http://localhost:5000/api/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: input })
-            });
-            const data = await response.json();
-            
+            const res = await API.post('/chat', { message: input });
+            const data = res.data;
+
             if (data.success) {
                 setMessages(prev => [...prev, { text: data.response, sender: 'bot' }]);
             } else {
@@ -66,14 +62,17 @@ const Chatbot = () => {
                                     <FiMessageCircle className="text-white text-xl" />
                                 </div>
                                 <div>
-                                    <h3 className="text-white font-bold text-sm tracking-tight">NatureMart Support</h3>
+                                    <h3 className="text-white font-bold text-sm tracking-tight">NatureMart AI</h3>
                                     <div className="flex items-center gap-1.5">
                                         <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                                        <span className="text-[10px] text-emerald-400 font-medium uppercase tracking-wider">Online</span>
+                                        <span className="text-[10px] text-emerald-400 font-medium uppercase tracking-wider">Ask me anything</span>
                                     </div>
                                 </div>
                             </div>
                             <div className="flex items-center gap-1">
+                                <button onClick={() => setMessages([WELCOME_MESSAGE])} className="p-2 hover:bg-white/5 rounded-full transition-colors text-gray-400 hover:text-white" title="Clear chat">
+                                    <FiTrash2 size={18} />
+                                </button>
                                 <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-white/5 rounded-full transition-colors text-gray-400 hover:text-white">
                                     <FiMinimize2 size={18} />
                                 </button>
@@ -124,7 +123,7 @@ const Chatbot = () => {
                                     type="text"
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
-                                    placeholder="Type your message..."
+                                    placeholder="Ask me anything..."
                                     className="w-full bg-white/5 border border-white/10 rounded-full py-3 px-5 pr-12 text-sm text-white focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-gray-500"
                                 />
                                 <button 
