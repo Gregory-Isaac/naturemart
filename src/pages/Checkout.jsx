@@ -5,6 +5,7 @@ import { FiArrowRight, FiCheckCircle, FiChevronLeft, FiClock, FiLock, FiPhone, F
 import { useCart }                                                                             from "../context/CartContext";
 import { Link, useNavigate }                                                                   from "react-router-dom";
 import { getImageUrl, handleImageFallback }                                                    from "../utils/imageUrl";
+import { calculateOrderTotals }                                                                 from "../utils/cartCalculations";
 
 export default function Checkout() {
   const { cart, clearCart }   = useCart();
@@ -13,10 +14,7 @@ export default function Checkout() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus]   = useState(null);
 
-  const subtotal = cart.reduce((acc, item) => acc + (item.price * (item.quantity || 1)), 0);
-  const shipping = subtotal > 100 ? 0 : 15;
-  const tax      = subtotal * 0.08;
-  const total    = subtotal + shipping + tax;
+  const { subtotal, shipping, tax, total } = calculateOrderTotals(cart);
 
   const normalizePhone = (value) => {
     const digits = value.replace(/\D/g, "");

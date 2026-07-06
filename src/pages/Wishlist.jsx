@@ -4,19 +4,7 @@ import { FiHeart, FiShoppingBag } from 'react-icons/fi';
 import { useWishlist } from '../context/WishlistContext';
 import ProductCard from '../components/ProductCard';
 import { Link } from 'react-router-dom';
-
-const container = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1 }
-  }
-};
-
-const item = {
-  hidden: { opacity: 0, y: 30 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5 } }
-};
+import { staggerContainer, staggerItem } from '../utils/animations';
 
 export default function Wishlist() {
   const { wishlist } = useWishlist();
@@ -46,13 +34,13 @@ export default function Wishlist() {
 
         {wishlist.length > 0 ? (
           <motion.div 
-            variants={container} 
+            variants={staggerContainer} 
             initial="hidden" 
             animate="show" 
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"
           >
             {wishlist.map(p => (
-              <motion.div variants={item} key={p.id}>
+              <motion.div variants={staggerItem} key={p.id}>
                 <ProductCard product={p} />
               </motion.div>
             ))}

@@ -1,6 +1,6 @@
-import { Link }                         from "react-router-dom";
-import { motion }                       from "framer-motion";
-import { useEffect, useMemo, useState } from "react";
+import { Link }                from "react-router-dom";
+import { motion }              from "framer-motion";
+import { useMemo }             from "react";
 import {
   FiArrowRight,
   FiAward,
@@ -13,9 +13,9 @@ import {
   FiStar,
   FiTruck,
 } from "react-icons/fi";
-import API                 from "../api/client";
 import { useCart }         from "../context/CartContext";
 import { useNotification } from "../components/Notification";
+import useProducts         from "../hooks/useProducts";
 import { getImageUrl, handleImageFallback } from "../utils/imageUrl";
 import aloeImage           from "../images/aloe_vera_gel.png";
 import bambooImage         from "../images/bamboo_toothbrush.png";
@@ -150,25 +150,9 @@ const reserveSets = [
 ];
 
 export default function Home() {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading]   = useState(true);
+  const { products, loading }   = useProducts();
   const { addToCart }           = useCart();
   const { addNotification }     = useNotification();
-
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const res = await API.get("/get_products");
-        setProducts(Array.isArray(res.data) ? res.data : []);
-      } catch (err) {
-        console.error("Failed to fetch featured products", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProducts();
-  }, []);
 
   const homeProducts = useMemo(() => {
     const source = products.length ? products : fallbackProducts;

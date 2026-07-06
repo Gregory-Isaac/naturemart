@@ -5,18 +5,14 @@ import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useNotification } from '../components/Notification';
 import { getImageUrl, handleImageFallback } from '../utils/imageUrl';
+import { calculateOrderTotals, FREE_SHIPPING_THRESHOLD } from '../utils/cartCalculations';
 
 export default function Cart() {
   const { cart, removeFromCart, updateQuantity, clearCart } = useCart();
   const { addNotification } = useNotification();
 
-  const subtotal = cart.reduce((acc, item) => acc + (item.price * (item.quantity || 1)), 0);
-  const shipping = subtotal > 100 ? 0 : 15;
-  const tax = subtotal * 0.08;
-  const total = subtotal + shipping + tax;
-
-  const freeShippingThreshold = 100;
-  const progressToFreeShipping = Math.min((subtotal / freeShippingThreshold) * 100, 100);
+  const { subtotal, shipping, tax, total } = calculateOrderTotals(cart);
+  const progressToFreeShipping = Math.min((subtotal / FREE_SHIPPING_THRESHOLD) * 100, 100);
 
   const handleRemove = (id, name) => {
     removeFromCart(id);
@@ -69,9 +65,9 @@ export default function Cart() {
               <div className="flex items-center gap-3 mb-4">
                 <FiTruck className="text-[var(--nm-gold)]" />
                 <span className="text-sm font-bold uppercase tracking-widest">
-                  {subtotal >= freeShippingThreshold 
+                  {subtotal >= FREE_SHIPPING_THRESHOLD 
                     ? "You've earned FREE shipping!" 
-                    : `Spend $${(freeShippingThreshold - subtotal).toFixed(2)} more for free shipping`}
+                    : `Spend $${(FREE_SHIPPING_THRESHOLD - subtotal).toFixed(2)} more for free shipping`}
                 </span>
               </div>
               <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">

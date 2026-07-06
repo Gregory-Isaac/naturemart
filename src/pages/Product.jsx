@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -16,8 +16,8 @@ import {
   FiTruck,
   FiZap,
 } from 'react-icons/fi';
-import API from '../api/client';
 import { useCart } from '../context/CartContext';
+import useProducts from '../hooks/useProducts';
 import { useWishlist } from '../context/WishlistContext';
 import { useNotification } from '../components/Notification';
 import ProductCard from '../components/ProductCard';
@@ -43,33 +43,23 @@ export default function Product() {
   const { toggleWishlist, isInWishlist } = useWishlist();
   const { addNotification } = useNotification();
 
-  const [product, setProduct] = useState(null);
-  const [products, setProducts] = useState([]);
-  const [quantity, setQuantity] = useState(1);
-  const [activeTab, setActiveTab] = useState('details');
+  const { products, loading } = useProducts();
+  const [quantity, setQuantity] = React.useState(1);
+  const [activeTab, setActiveTab] = React.useState('details');
+
+  const product = useMemo(() => {
+    if (loading || products.length === 0) return null;
+    return products.find((item) => Number(item.id) === Number(id)) || null;
+  }, [products, loading, id]);
 
   useEffect(() => {
-    const fetchProduct = async () => {
-      try {
-        const res = await API.get('/get_products');
-        const allProducts = Array.isArray(res.data) ? res.data : [];
-        setProducts(allProducts);
-
-        const foundProduct = allProducts.find((item) => Number(item.id) === Number(id));
-        if (foundProduct) {
-          setProduct(foundProduct);
-          window.scrollTo(0, 0);
-        } else {
-          navigate('/shop');
-        }
-      } catch (err) {
-        console.error('Failed to fetch product', err);
-        navigate('/shop');
-      }
-    };
-
-    fetchProduct();
-  }, [id, navigate]);
+    if (!loading && products.length > 0 && !product) {
+      navigate('/shop');
+    }
+    if (product) {
+      window.scrollTo(0, 0);
+    }
+  }, [product, loading, products, navigate]);
 
   const price = Number(product?.price || 0);
   const productImage = product ? getImageUrl(product.image) : '';
