@@ -15,7 +15,6 @@ import {
 import API from "../api/client";
 import { getImageUrl } from "../utils/imageUrl";
 
-const ADMIN_PASSWORD = "4734";
 const CATEGORIES = ["Skincare", "Lifestyle", "Supplements", "Wellness", "Organic", "General"];
 
 const emptyForm = {
@@ -63,20 +62,29 @@ export default function AddProduct() {
     }
   };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (password === ADMIN_PASSWORD) {
-      sessionStorage.setItem("naturemart_admin", "true");
-      setIsAdmin(true);
-      setPassword("");
-      setLoginError("");
-      return;
+    try {
+      const res = await API.post("/verify_admin", null, {
+        headers: { "X-Admin-Password": password },
+      });
+      if (res.data.success) {
+        sessionStorage.setItem("naturemart_admin", "true");
+        sessionStorage.setItem("naturemart_admin_pw", password);
+        setIsAdmin(true);
+        setPassword("");
+        setLoginError("");
+      } else {
+        setLoginError(res.data.message || "Incorrect admin password.");
+      }
+    } catch (error) {
+      setLoginError(error.response?.data?.message || "Incorrect admin password.");
     }
-    setLoginError("Incorrect admin password.");
   };
 
   const handleLogout = () => {
     sessionStorage.removeItem("naturemart_admin");
+    sessionStorage.removeItem("naturemart_admin_pw");
     setIsAdmin(false);
     setForm(emptyForm);
     setImage(null);
@@ -112,7 +120,7 @@ export default function AddProduct() {
       const res = await API.post("/add_product", data, {
         headers: {
           "Content-Type": "multipart/form-data",
-          "X-Admin-Password": ADMIN_PASSWORD,
+          "X-Admin-Password": sessionStorage.getItem("naturemart_admin_pw") || "",
         },
       });
 

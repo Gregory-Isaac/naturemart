@@ -68,10 +68,11 @@ CREATE TABLE `users` (
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`user_id`, `username`, `email`, `phone`, `password`) VALUES
-(1, 'Gregory', 'gregoryisaac473@gmail.com', '0708352076', '1234'),
-(2, 'Gregory', 'gregoryisaac473@gmail.com', '0708352076', '1234'),
-(3, 'Ryan', 'ryan47@gmail.com', '0755149353', '4734');
+-- NOTE: Do not seed users with plaintext passwords.
+-- Use the /api/signup endpoint or a script that bcrypt-hashes passwords.
+-- Example (passwords MUST be bcrypt hashes in production):
+-- INSERT INTO `users` (`user_id`, `username`, `email`, `phone`, `password`) VALUES
+-- (1, 'Example', 'user@example.com', '0700000000', '$2b$12$...');
 
 --
 -- Indexes for dumped tables

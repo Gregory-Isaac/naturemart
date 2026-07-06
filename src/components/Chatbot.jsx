@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiMessageCircle, FiX, FiSend, FiMinimize2 } from 'react-icons/fi';
+import API from '../api/client';
 
 const Chatbot = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -29,12 +30,8 @@ const Chatbot = () => {
         setIsLoading(true);
 
         try {
-            const response = await fetch('http://localhost:5000/api/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: input })
-            });
-            const data = await response.json();
+            const response = await API.post('/chat', { message: input });
+            const data = response.data;
             
             if (data.success) {
                 setMessages(prev => [...prev, { text: data.response, sender: 'bot' }]);

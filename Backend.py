@@ -15,20 +15,33 @@ from dotenv import load_dotenv
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 import google.generativeai as genai
+from werkzeug.utils import secure_filename
 
 # Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)
+
+ALLOWED_ORIGINS = os.getenv(
+    "CORS_ORIGINS",
+    "http://localhost:3000,http://127.0.0.1:3000"
+).split(",")
+CORS(app, origins=ALLOWED_ORIGINS, supports_credentials=True)
 
 # Configure Gemini
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 gemini_model = genai.GenerativeModel('gemini-1.5-flash')
 
 app.config['UPLOAD_FOLDER'] = os.path.join("static", "Images")
-app.config['SECRET_KEY'] = os.getenv("JWT_SECRET", "secret123")
-app.config['ADMIN_PASSWORD'] = os.getenv("ADMIN_PASSWORD", "4734")
+JWT_SECRET = os.getenv("JWT_SECRET")
+if not JWT_SECRET:
+    raise RuntimeError("JWT_SECRET environment variable is required")
+app.config['SECRET_KEY'] = JWT_SECRET
+
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+if not ADMIN_PASSWORD:
+    raise RuntimeError("ADMIN_PASSWORD environment variable is required")
+app.config['ADMIN_PASSWORD'] = ADMIN_PASSWORD
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
 # ── Database mode ─────────────────────────────────────────────────────────────
@@ -148,8 +161,8 @@ def db_status():
             "message": "Database connected successfully",
             "mode": "Local (SQLite)" if USE_LOCAL_DB else "Remote (MySQL)"
         })
-    except Exception as e:
-        return jsonify({"success": False, "message": f"Database connection failed: {str(e)}"}), 500
+    except Exception:
+        return jsonify({"success": False, "message": "Database connection failed"}), 500
     finally:
         if connection:
             connection.close()
@@ -171,7 +184,7 @@ def token_required(f):
             data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=["HS256"])
             current_user_id = data['user_id']
         except Exception as e:
-            return jsonify({'success': False, 'message': 'Token is invalid!', 'error': str(e)}), 401
+            return jsonify({'success': False, 'message': 'Token is invalid!'}), 401
         
         return f(current_user_id, *args, **kwargs)
     
@@ -186,6 +199,12 @@ def admin_required(f):
         return f(*args, **kwargs)
 
     return decorated
+
+
+@app.route("/api/verify_admin", methods=["POST"])
+@admin_required
+def verify_admin():
+    return jsonify({"success": True, "message": "Admin verified"})
 
 
 def normalize_mpesa_phone(phone):
@@ -235,8 +254,8 @@ def signup():
             cursor.execute(sql, (name, email, hashed_password, phone))
         connection.commit()
         return jsonify({"success": True, "message": "User registered successfully!"})
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)}), 500
+    except Exception:
+        return jsonify({"success": False, "message": "Registration failed"}), 500
     finally:
         if connection:
             connection.close()
@@ -275,8 +294,8 @@ def signin():
             })
         else:
             return jsonify({"success": False, "message": "Invalid email or password"}), 401
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)}), 500
+    except Exception:
+        return jsonify({"success": False, "message": "Sign in failed"}), 500
     finally:
         if connection:
             connection.close()
@@ -338,8 +357,8 @@ def google_auth():
     except ValueError:
         # Invalid token
         return jsonify({"success": False, "message": "Invalid Google token!"}), 401
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)}), 500
+    except Exception:
+        return jsonify({"success": False, "message": "Google authentication failed"}), 500
     finally:
         if 'connection' in locals():
             connection.close()
@@ -424,8 +443,8 @@ def github_auth():
             "token": token
         })
         
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)}), 500
+    except Exception:
+        return jsonify({"success": False, "message": "GitHub authentication failed"}), 500
     finally:
         if 'connection' in locals():
             connection.close()
@@ -443,7 +462,10 @@ def add_product():
     photo_path = ""
     
     if products_photo:
-        photo_path = os.path.join(app.config["UPLOAD_FOLDER"], products_photo.filename)
+        filename = secure_filename(products_photo.filename)
+        if not filename:
+            return jsonify({"success": False, "message": "Invalid filename"}), 400
+        photo_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
         products_photo.save(photo_path)
 
     connection = None
@@ -454,8 +476,8 @@ def add_product():
             cursor.execute(sql, (product_name, product_description, product_price, photo_path, product_category, product_stock))
         connection.commit()
         return jsonify({"success": True, "message": "Product added successfully!"})
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)}), 500
+    except Exception:
+        return jsonify({"success": False, "message": "Failed to add product"}), 500
     finally:
         if connection:
             connection.close()
@@ -470,8 +492,8 @@ def get_products():
             cursor.execute(sql)
             products = cursor.fetchall()
         return jsonify(products)
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)}), 500
+    except Exception:
+        return jsonify({"success": False, "message": "Failed to fetch products"}), 500
     finally:
         if connection:
             connection.close()
@@ -483,8 +505,10 @@ def mpesa_payment():
     raw_phone = data.get('phone', '')
     phone = normalize_mpesa_phone(raw_phone)
     
-    consumer_key = os.getenv("MPESA_CONSUMER_KEY", "GTWADFxIpUfDoNikNGqq1C3023evM6UH")
-    consumer_secret = os.getenv("MPESA_CONSUMER_SECRET", "amFbAoUByPV2rM5A")
+    consumer_key = os.getenv("MPESA_CONSUMER_KEY")
+    consumer_secret = os.getenv("MPESA_CONSUMER_SECRET")
+    if not consumer_key or not consumer_secret:
+        return jsonify({"success": False, "message": "M-Pesa payment is not configured."}), 503
  
     try:
         if not phone:
@@ -513,9 +537,11 @@ def mpesa_payment():
         access_token = "Bearer " + token_data['access_token']
  
         timestamp = datetime.datetime.today().strftime('%Y%m%d%H%M%S')
-        passkey = os.getenv("MPESA_PASSKEY", 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919')
-        business_short_code = os.getenv("MPESA_SHORTCODE", "174379")
-        callback_url = os.getenv("MPESA_CALLBACK_URL", "https://gregoryisaac.alwaysdata.net/api/mpesa_callback")
+        passkey = os.getenv("MPESA_PASSKEY", "")
+        business_short_code = os.getenv("MPESA_SHORTCODE", "")
+        callback_url = os.getenv("MPESA_CALLBACK_URL", "")
+        if not passkey or not business_short_code or not callback_url:
+            return jsonify({"success": False, "message": "M-Pesa payment is not fully configured."}), 503
         password_data = business_short_code + passkey + timestamp
         password = base64.b64encode(password_data.encode()).decode('utf-8')
  
@@ -550,8 +576,8 @@ def mpesa_payment():
             "message": response_data.get("errorMessage") or response_data.get("ResponseDescription") or "M-Pesa rejected the STK push request.",
             "details": response_data
         }), 400
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)}), 500
+    except Exception:
+        return jsonify({"success": False, "message": "Payment processing failed"}), 500
 
 
 @app.route('/api/mpesa_callback', methods=['POST'])
@@ -572,8 +598,8 @@ def track_order(order_id):
             return jsonify({"success": True, "order": order})
         else:
             return jsonify({"success": False, "message": "Order not found"}), 404
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)}), 500
+    except Exception:
+        return jsonify({"success": False, "message": "Failed to fetch order"}), 500
     finally:
         if connection:
             connection.close()
@@ -600,8 +626,8 @@ def update_tracking(current_user_id):
             cursor.execute(sql, (status, tracking_number, delivery_partner, estimated_delivery, order_id))
         connection.commit()
         return jsonify({"success": True, "message": "Tracking updated successfully!"})
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)}), 500
+    except Exception:
+        return jsonify({"success": False, "message": "Failed to update tracking"}), 500
     finally:
         if connection:
             connection.close()
@@ -617,8 +643,8 @@ def get_user_orders(current_user_id):
             cursor.execute(sql, (current_user_id,))
             orders = cursor.fetchall()
         return jsonify({"success": True, "orders": orders})
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)}), 500
+    except Exception:
+        return jsonify({"success": False, "message": "Failed to fetch orders"}), 500
     finally:
         if connection:
             connection.close()
@@ -685,8 +711,8 @@ def send_message(current_user_id):
             cursor.execute(sql, (current_user_id, receiver_id, message))
         connection.commit()
         return jsonify({"success": True, "message": "Message sent!"})
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)}), 500
+    except Exception:
+        return jsonify({"success": False, "message": "Failed to send message"}), 500
     finally:
         if connection:
             connection.close()
@@ -711,8 +737,8 @@ def get_messages(current_user_id, other_user_id):
             cursor.execute("UPDATE messages SET is_read=TRUE WHERE receiver_id=%s AND sender_id=%s", (current_user_id, other_user_id))
         connection.commit()
         return jsonify({"success": True, "messages": messages})
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)}), 500
+    except Exception:
+        return jsonify({"success": False, "message": "Failed to fetch messages"}), 500
     finally:
         if connection:
             connection.close()
@@ -734,12 +760,12 @@ def get_conversations(current_user_id):
             cursor.execute(sql, (current_user_id, current_user_id, current_user_id))
             conversations = cursor.fetchall()
         return jsonify({"success": True, "conversations": conversations})
-    except Exception as e:
-        return jsonify({"success": False, "message": str(e)}), 500
+    except Exception:
+        return jsonify({"success": False, "message": "Failed to fetch conversations"}), 500
     finally:
         if connection:
             connection.close()
 
 if __name__ == "__main__":
     port = int(os.getenv("FLASK_PORT", os.getenv("PORT", 5001)))
-    app.run(debug=True, port=port)
+    app.run(debug=os.getenv("FLASK_DEBUG", "false").lower() == "true", port=port)
