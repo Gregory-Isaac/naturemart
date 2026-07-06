@@ -1,10 +1,10 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { FiHeart, FiShoppingBag } from 'react-icons/fi';
 import { useWishlist } from '../context/WishlistContext';
 import ProductCard from '../components/ProductCard';
-import { Link } from 'react-router-dom';
 import { staggerContainer, staggerItem } from '../utils/animations';
+import EmptyState from '../components/EmptyState';
 
 export default function Wishlist() {
   const { wishlist } = useWishlist();
@@ -46,26 +46,15 @@ export default function Wishlist() {
             ))}
           </motion.div>
         ) : (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-center justify-center py-32 glass rounded-[3rem] border border-white/5 text-center px-6"
-          >
-            <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center text-gray-700 mb-8">
-              <FiHeart size={48} />
-            </div>
-            <h3 className="text-2xl font-bold text-white mb-4">Your wishlist is empty</h3>
-            <p className="text-gray-500 max-w-sm mb-10 font-light">
-              Seems like you haven't saved any organic treasures yet. Explore our shop and find something special!
-            </p>
-            <Link 
-              to="/shop" 
-              className="px-10 py-4 bg-white text-black font-bold rounded-full flex items-center gap-3 hover:scale-105 transition-transform"
-            >
-              <FiShoppingBag />
-              Go to Shop
-            </Link>
-          </motion.div>
+          <EmptyState
+            icon={FiHeart}
+            iconSize={48}
+            heading="Your wishlist is empty"
+            description="Seems like you haven't saved any organic treasures yet. Explore our shop and find something special!"
+            linkTo="/shop"
+            linkLabel="Go to Shop"
+            linkIcon={FiShoppingBag}
+          />
         )}
       </div>
     </div>

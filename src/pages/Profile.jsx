@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FiUser, FiPackage, FiSettings, FiLogOut, FiMail, FiPhone, FiCalendar, FiClock } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import API from '../api/client';
+import formatPrice from '../utils/formatPrice';
 
 export default function Profile() {
   const { user, logout } = useAuth();
@@ -134,7 +135,7 @@ export default function Profile() {
                             </div>
                             <div className="text-right">
                               <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Total</p>
-                              <p className="text-xl font-bold text-white">${Number(order.total).toFixed(2)}</p>
+                              <p className="text-xl font-bold text-white">{formatPrice(order.total)}</p>
                             </div>
                           </div>
                         </div>

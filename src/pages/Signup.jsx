@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import OAuthButtons, { handleGithubRedirect } from '../components/OAuthButtons';
 import FormAlert from '../components/FormAlert';
+import useAuthCallback from '../hooks/useAuthCallback';
 
 export default function Signup() {
   const [name, setName] = useState('');
@@ -12,32 +13,10 @@ export default function Signup() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [searchParams] = useSearchParams();
-  
+
   const { signup, googleLogin, githubLogin } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const code = searchParams.get('code');
-    if (code) {
-      handleGithubCallback(code);
-    }
-  }, [searchParams]);
-
-  const handleGithubCallback = async (code) => {
-    setLoading(true);
-    setError('');
-    const res = await githubLogin(code);
-    setLoading(false);
-    
-    if (res.success) {
-      navigate('/');
-    } else {
-      setError(res.message);
-    }
-  };
-
-
+  const { handleGoogleSuccess } = useAuthCallback({ githubLogin, googleLogin, setLoading, setError });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -50,19 +29,6 @@ export default function Signup() {
     if (res.success) {
       setSuccess(true);
       setTimeout(() => navigate('/login'), 2000);
-    } else {
-      setError(res.message);
-    }
-  };
-
-  const handleGoogleSuccess = async (credentialResponse) => {
-    setLoading(true);
-    setError('');
-    const res = await googleLogin(credentialResponse.credential);
-    setLoading(false);
-    
-    if (res.success) {
-      navigate('/');
     } else {
       setError(res.message);
     }

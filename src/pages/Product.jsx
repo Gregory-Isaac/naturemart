@@ -7,9 +7,7 @@ import {
   FiCheckCircle,
   FiGlobe,
   FiHeart,
-  FiMinus,
   FiPackage,
-  FiPlus,
   FiShield,
   FiShoppingCart,
   FiStar,
@@ -22,6 +20,8 @@ import { useWishlist } from '../context/WishlistContext';
 import { useNotification } from '../components/Notification';
 import ProductCard from '../components/ProductCard';
 import { getImageUrl, handleImageFallback } from '../utils/imageUrl';
+import formatPrice from '../utils/formatPrice';
+import QuantitySelector from '../components/QuantitySelector';
 
 const productNotes = [
   'Selected for ingredient clarity, shelf presence, and reliable daily performance.',
@@ -156,7 +156,7 @@ export default function Product() {
                 {product.name}
               </h1>
               <div className="flex flex-wrap items-center gap-4 mb-7">
-                <span className="text-4xl font-black text-white">${price.toFixed(2)}</span>
+                <span className="text-4xl font-black text-white">{formatPrice(price)}</span>
                 <span className="premium-status-pill">
                   <FiCheckCircle />
                   In stock
@@ -173,23 +173,11 @@ export default function Product() {
 
             <div className="premium-card p-5 md:p-6 mb-8">
               <div className="flex flex-wrap gap-4">
-                <div className="flex items-center rounded-lg border border-white/10 bg-white/5 p-1">
-                  <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="w-12 h-12 flex items-center justify-center hover:text-[var(--nm-gold)] transition-colors"
-                    aria-label="Decrease quantity"
-                  >
-                    <FiMinus />
-                  </button>
-                  <span className="w-12 text-center font-bold text-lg">{quantity}</span>
-                  <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="w-12 h-12 flex items-center justify-center hover:text-[var(--nm-gold)] transition-colors"
-                    aria-label="Increase quantity"
-                  >
-                    <FiPlus />
-                  </button>
-                </div>
+                <QuantitySelector
+                  value={quantity}
+                  onChange={setQuantity}
+                  size="lg"
+                />
 
                 <button onClick={handleAddToCart} className="premium-button premium-button-primary flex-1 min-w-[220px]">
                   <FiShoppingCart size={20} />

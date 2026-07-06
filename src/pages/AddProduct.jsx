@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import formatPrice from "../utils/formatPrice";
 import {
   FiAlertCircle,
   FiCheckCircle,
@@ -309,7 +310,7 @@ export default function AddProduct() {
                       <p className="text-sm text-gray-500 truncate">{product.description || "No description"}</p>
                       <div className="flex flex-wrap gap-2 mt-2 text-xs text-gray-400">
                         <span className="px-2 py-1 rounded-lg bg-white/5">{product.category || "General"}</span>
-                        <span className="px-2 py-1 rounded-lg bg-white/5">${Number(product.price || 0).toFixed(2)}</span>
+                        <span className="px-2 py-1 rounded-lg bg-white/5">{formatPrice(product.price)}</span>
                         <span className="px-2 py-1 rounded-lg bg-white/5">Stock: {product.stock || 0}</span>
                       </div>
                     </div>
