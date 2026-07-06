@@ -1,6 +1,6 @@
-import { Link }                         from "react-router-dom";
-import { motion }                       from "framer-motion";
-import { useEffect, useMemo, useState } from "react";
+import { Link }                from "react-router-dom";
+import { motion }              from "framer-motion";
+import { useMemo }             from "react";
 import {
   FiArrowRight,
   FiAward,
@@ -13,10 +13,12 @@ import {
   FiStar,
   FiTruck,
 } from "react-icons/fi";
-import API                 from "../api/client";
 import { useCart }         from "../context/CartContext";
 import { useNotification } from "../components/Notification";
+import useProducts         from "../hooks/useProducts";
 import { getImageUrl, handleImageFallback } from "../utils/imageUrl";
+import formatPrice         from "../utils/formatPrice";
+import SectionHeading      from "../components/SectionHeading";
 import aloeImage           from "../images/aloe_vera_gel.png";
 import bambooImage         from "../images/bamboo_toothbrush.png";
 import lavenderImage       from "../images/lavender_oil.png";
@@ -150,25 +152,9 @@ const reserveSets = [
 ];
 
 export default function Home() {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading]   = useState(true);
+  const { products, loading }   = useProducts();
   const { addToCart }           = useCart();
   const { addNotification }     = useNotification();
-
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const res = await API.get("/get_products");
-        setProducts(Array.isArray(res.data) ? res.data : []);
-      } catch (err) {
-        console.error("Failed to fetch featured products", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProducts();
-  }, []);
 
   const homeProducts = useMemo(() => {
     const source = products.length ? products : fallbackProducts;
@@ -270,13 +256,7 @@ export default function Home() {
 
       <section className = "home-section">
       <div     className = "home-shell">
-      <div     className = "home-section-heading">
-      <span    className = "home-kicker">The Collection</span>
-            <h2>Shop by ritual, need, or material.</h2>
-            <Link to = "/shop" className = "home-text-link">
-              View all <FiArrowRight />
-            </Link>
-          </div>
+          <SectionHeading kicker="The Collection" heading="Shop by ritual, need, or material." linkTo="/shop" linkLabel="View all" />
 
           <div className = "home-category-grid">
             {categoryStories.map((category, index) => (
@@ -302,10 +282,7 @@ export default function Home() {
 
       <section className = "home-section home-section--featured">
       <div     className = "home-shell">
-      <div     className = "home-section-heading">
-      <span    className = "home-kicker">Editor Picks</span>
-            <h2>Quiet luxury for everyday care.</h2>
-          </div>
+          <SectionHeading kicker="Editor Picks" heading="Quiet luxury for everyday care." />
 
           {loading ? (
             <div className = "home-product-grid">
@@ -332,7 +309,7 @@ export default function Home() {
                     <h3>{product.name}</h3>
                     <p>{product.description}</p>
                     <div className = "home-product__footer">
-                      <strong>${Number(product.price).toFixed(2)}</strong>
+                      <strong>{formatPrice(product.price)}</strong>
                       <button type = "button" onClick = {() => handleAddToCart(product)} aria-label = {`Add ${product.name} to cart`}>
                         <FiShoppingBag />
                       </button>
@@ -383,10 +360,7 @@ export default function Home() {
 
       <section className = "home-section home-reserve">
       <div     className = "home-shell">
-      <div     className = "home-section-heading">
-      <span    className = "home-kicker">Reserve Sets</span>
-            <h2>Curated edits for a better daily rhythm.</h2>
-          </div>
+          <SectionHeading kicker="Reserve Sets" heading="Curated edits for a better daily rhythm." />
 
           <div className = "home-reserve__grid">
             {reserveSets.map((set, index) => (

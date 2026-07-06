@@ -1,22 +1,22 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiArrowRight, FiGift, FiMinus, FiPlus, FiShield, FiShoppingBag, FiTrash2, FiTruck } from 'react-icons/fi';
+import { FiArrowRight, FiGift, FiShield, FiShoppingBag, FiTrash2, FiTruck } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useNotification } from '../components/Notification';
 import { getImageUrl, handleImageFallback } from '../utils/imageUrl';
+import { calculateOrderTotals, FREE_SHIPPING_THRESHOLD } from '../utils/cartCalculations';
+import formatPrice from '../utils/formatPrice';
+import EmptyState from '../components/EmptyState';
+import QuantitySelector from '../components/QuantitySelector';
+import OrderSummaryLines from '../components/OrderSummaryLines';
 
 export default function Cart() {
   const { cart, removeFromCart, updateQuantity, clearCart } = useCart();
   const { addNotification } = useNotification();
 
-  const subtotal = cart.reduce((acc, item) => acc + (item.price * (item.quantity || 1)), 0);
-  const shipping = subtotal > 100 ? 0 : 15;
-  const tax = subtotal * 0.08;
-  const total = subtotal + shipping + tax;
-
-  const freeShippingThreshold = 100;
-  const progressToFreeShipping = Math.min((subtotal / freeShippingThreshold) * 100, 100);
+  const { subtotal, shipping, tax, total } = calculateOrderTotals(cart);
+  const progressToFreeShipping = Math.min((subtotal / FREE_SHIPPING_THRESHOLD) * 100, 100);
 
   const handleRemove = (id, name) => {
     removeFromCart(id);
@@ -25,22 +25,15 @@ export default function Cart() {
 
   if (cart.length === 0) {
     return (
-      <div className="premium-page min-h-[80vh] flex items-center justify-center px-6 py-24 text-center">
-        <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} className="premium-card premium-veil max-w-xl p-10">
-          <div className="relative z-10">
-            <div className="mx-auto mb-8 grid h-24 w-24 place-items-center rounded-lg border border-white/10 bg-white/5 text-[var(--nm-gold)]">
-              <FiShoppingBag size={40} />
-            </div>
-            <span className="premium-kicker mb-4">Your Reserve</span>
-            <h2 className="premium-heading text-4xl md:text-5xl mb-5">Your cart is empty</h2>
-            <p className="premium-muted mb-9">Start building a cleaner shelf with premium skincare, wellness, and lifestyle essentials.</p>
-            <Link to="/shop" className="premium-button premium-button-primary">
-              <FiShoppingBag />
-              Start Shopping
-            </Link>
-          </div>
-        </motion.div>
-      </div>
+      <EmptyState
+        icon={FiShoppingBag}
+        kicker="Your Reserve"
+        heading="Your cart is empty"
+        description="Start building a cleaner shelf with premium skincare, wellness, and lifestyle essentials."
+        linkTo="/shop"
+        linkLabel="Start Shopping"
+        linkIcon={FiShoppingBag}
+      />
     );
   }
 
@@ -69,9 +62,9 @@ export default function Cart() {
               <div className="flex items-center gap-3 mb-4">
                 <FiTruck className="text-[var(--nm-gold)]" />
                 <span className="text-sm font-bold uppercase tracking-widest">
-                  {subtotal >= freeShippingThreshold 
+                  {subtotal >= FREE_SHIPPING_THRESHOLD 
                     ? "You've earned FREE shipping!" 
-                    : `Spend $${(freeShippingThreshold - subtotal).toFixed(2)} more for free shipping`}
+                    : `Spend ${formatPrice(FREE_SHIPPING_THRESHOLD - subtotal)} more for free shipping`}
                 </span>
               </div>
               <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
@@ -103,24 +96,13 @@ export default function Cart() {
                     <p className="text-[var(--nm-muted)] text-sm line-clamp-1">{item.description}</p>
                   </div>
 
-                  <div className="flex items-center bg-white/5 border border-white/10 rounded-lg p-1">
-                    <button 
-                      onClick={() => updateQuantity(item.id, Math.max(1, (item.quantity || 1) - 1))}
-                      className="w-8 h-8 flex items-center justify-center hover:text-[var(--nm-gold)] transition-colors"
-                    >
-                      <FiMinus size={14} />
-                    </button>
-                    <span className="w-8 text-center font-bold">{item.quantity || 1}</span>
-                    <button 
-                      onClick={() => updateQuantity(item.id, (item.quantity || 1) + 1)}
-                      className="w-8 h-8 flex items-center justify-center hover:text-[var(--nm-gold)] transition-colors"
-                    >
-                      <FiPlus size={14} />
-                    </button>
-                  </div>
+                  <QuantitySelector
+                    value={item.quantity || 1}
+                    onChange={(qty) => updateQuantity(item.id, qty)}
+                  />
 
                   <div className="text-right min-w-[80px]">
-                    <p className="text-xl font-black text-white">${(item.price * (item.quantity || 1)).toFixed(2)}</p>
+                    <p className="text-xl font-black text-white">{formatPrice(item.price * (item.quantity || 1))}</p>
                   </div>
 
                   <button 
@@ -153,25 +135,8 @@ export default function Cart() {
                 </div>
               </div>
               
-              <div className="space-y-4 mb-8">
-                <div className="flex justify-between text-gray-400">
-                  <span>Subtotal</span>
-                  <span className="text-white font-medium">${subtotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-gray-400">
-                  <span>Shipping</span>
-                  <span className={shipping === 0 ? "text-[var(--nm-green)] font-bold" : "text-white font-medium"}>
-                    {shipping === 0 ? "FREE" : `$${shipping.toFixed(2)}`}
-                  </span>
-                </div>
-                <div className="flex justify-between text-gray-400">
-                  <span>Estimated Tax</span>
-                  <span className="text-white font-medium">${tax.toFixed(2)}</span>
-                </div>
-                <div className="pt-4 border-t border-white/5 flex justify-between items-end">
-                  <span className="text-gray-400 font-bold uppercase tracking-widest text-xs">Total Amount</span>
-                  <span className="text-4xl font-black text-white leading-none">${total.toFixed(2)}</span>
-                </div>
+              <div className="mb-8">
+                <OrderSummaryLines subtotal={subtotal} shipping={shipping} tax={tax} total={total} />
               </div>
 
               <div className="space-y-4">

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import API from '../api/client';
 import { FiPackage, FiTruck, FiCheck, FiSearch, FiClock, FiMapPin } from 'react-icons/fi';
+import FormAlert from '../components/FormAlert';
 
 const statuses = [
   { id: 'pending', label: 'Order Placed', icon: FiPackage },
@@ -77,15 +78,7 @@ export default function Tracking() {
           </button>
         </form>
 
-        {error && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="bg-red-500/10 border border-red-500/50 text-red-400 p-4 rounded-2xl text-center mb-10"
-          >
-            {error}
-          </motion.div>
-        )}
+        <FormAlert message={error} />
 
         {order && (
           <motion.div 

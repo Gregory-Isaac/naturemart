@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -7,21 +7,21 @@ import {
   FiCheckCircle,
   FiGlobe,
   FiHeart,
-  FiMinus,
   FiPackage,
-  FiPlus,
   FiShield,
   FiShoppingCart,
   FiStar,
   FiTruck,
   FiZap,
 } from 'react-icons/fi';
-import API from '../api/client';
 import { useCart } from '../context/CartContext';
+import useProducts from '../hooks/useProducts';
 import { useWishlist } from '../context/WishlistContext';
 import { useNotification } from '../components/Notification';
 import ProductCard from '../components/ProductCard';
 import { getImageUrl, handleImageFallback } from '../utils/imageUrl';
+import formatPrice from '../utils/formatPrice';
+import QuantitySelector from '../components/QuantitySelector';
 
 const productNotes = [
   'Selected for ingredient clarity, shelf presence, and reliable daily performance.',
@@ -43,33 +43,23 @@ export default function Product() {
   const { toggleWishlist, isInWishlist } = useWishlist();
   const { addNotification } = useNotification();
 
-  const [product, setProduct] = useState(null);
-  const [products, setProducts] = useState([]);
-  const [quantity, setQuantity] = useState(1);
-  const [activeTab, setActiveTab] = useState('details');
+  const { products, loading } = useProducts();
+  const [quantity, setQuantity] = React.useState(1);
+  const [activeTab, setActiveTab] = React.useState('details');
+
+  const product = useMemo(() => {
+    if (loading || products.length === 0) return null;
+    return products.find((item) => Number(item.id) === Number(id)) || null;
+  }, [products, loading, id]);
 
   useEffect(() => {
-    const fetchProduct = async () => {
-      try {
-        const res = await API.get('/get_products');
-        const allProducts = Array.isArray(res.data) ? res.data : [];
-        setProducts(allProducts);
-
-        const foundProduct = allProducts.find((item) => Number(item.id) === Number(id));
-        if (foundProduct) {
-          setProduct(foundProduct);
-          window.scrollTo(0, 0);
-        } else {
-          navigate('/shop');
-        }
-      } catch (err) {
-        console.error('Failed to fetch product', err);
-        navigate('/shop');
-      }
-    };
-
-    fetchProduct();
-  }, [id, navigate]);
+    if (!loading && products.length > 0 && !product) {
+      navigate('/shop');
+    }
+    if (product) {
+      window.scrollTo(0, 0);
+    }
+  }, [product, loading, products, navigate]);
 
   const price = Number(product?.price || 0);
   const productImage = product ? getImageUrl(product.image) : '';
@@ -166,7 +156,7 @@ export default function Product() {
                 {product.name}
               </h1>
               <div className="flex flex-wrap items-center gap-4 mb-7">
-                <span className="text-4xl font-black text-white">${price.toFixed(2)}</span>
+                <span className="text-4xl font-black text-white">{formatPrice(price)}</span>
                 <span className="premium-status-pill">
                   <FiCheckCircle />
                   In stock
@@ -183,23 +173,11 @@ export default function Product() {
 
             <div className="premium-card p-5 md:p-6 mb-8">
               <div className="flex flex-wrap gap-4">
-                <div className="flex items-center rounded-lg border border-white/10 bg-white/5 p-1">
-                  <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="w-12 h-12 flex items-center justify-center hover:text-[var(--nm-gold)] transition-colors"
-                    aria-label="Decrease quantity"
-                  >
-                    <FiMinus />
-                  </button>
-                  <span className="w-12 text-center font-bold text-lg">{quantity}</span>
-                  <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="w-12 h-12 flex items-center justify-center hover:text-[var(--nm-gold)] transition-colors"
-                    aria-label="Increase quantity"
-                  >
-                    <FiPlus />
-                  </button>
-                </div>
+                <QuantitySelector
+                  value={quantity}
+                  onChange={setQuantity}
+                  size="lg"
+                />
 
                 <button onClick={handleAddToCart} className="premium-button premium-button-primary flex-1 min-w-[220px]">
                   <FiShoppingCart size={20} />

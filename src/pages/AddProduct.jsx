@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import formatPrice from "../utils/formatPrice";
 import {
   FiAlertCircle,
   FiCheckCircle,
@@ -14,6 +15,7 @@ import {
 } from "react-icons/fi";
 import API from "../api/client";
 import { getImageUrl } from "../utils/imageUrl";
+import useProducts from "../hooks/useProducts";
 
 const ADMIN_PASSWORD = "4734";
 const CATEGORIES = ["Skincare", "Lifestyle", "Supplements", "Wellness", "Organic", "General"];
@@ -34,34 +36,15 @@ export default function AddProduct() {
   const [form, setForm] = useState(emptyForm);
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState("");
-  const [products, setProducts] = useState([]);
-  const [loadingProducts, setLoadingProducts] = useState(false);
+  const { products, loading: loadingProducts, fetchProducts } = useProducts();
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState(null);
-
-  useEffect(() => {
-    if (isAdmin) {
-      fetchProducts();
-    }
-  }, [isAdmin]);
 
   useEffect(() => {
     return () => {
       if (preview) URL.revokeObjectURL(preview);
     };
   }, [preview]);
-
-  const fetchProducts = async () => {
-    setLoadingProducts(true);
-    try {
-      const res = await API.get("/get_products");
-      setProducts(Array.isArray(res.data) ? res.data : []);
-    } catch (error) {
-      setNotice({ type: "error", message: "Could not load products." });
-    } finally {
-      setLoadingProducts(false);
-    }
-  };
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -327,7 +310,7 @@ export default function AddProduct() {
                       <p className="text-sm text-gray-500 truncate">{product.description || "No description"}</p>
                       <div className="flex flex-wrap gap-2 mt-2 text-xs text-gray-400">
                         <span className="px-2 py-1 rounded-lg bg-white/5">{product.category || "General"}</span>
-                        <span className="px-2 py-1 rounded-lg bg-white/5">${Number(product.price || 0).toFixed(2)}</span>
+                        <span className="px-2 py-1 rounded-lg bg-white/5">{formatPrice(product.price)}</span>
                         <span className="px-2 py-1 rounded-lg bg-white/5">Stock: {product.stock || 0}</span>
                       </div>
                     </div>

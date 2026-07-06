@@ -1,44 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiAward, FiFilter, FiGrid, FiSearch, FiSliders } from 'react-icons/fi';
-import API from '../api/client';
 import ProductCard from '../components/ProductCard';
-
-const container = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1 }
-  }
-};
-
-const item = {
-  hidden: { opacity: 0, y: 30 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } }
-};
+import useProducts from '../hooks/useProducts';
+import { staggerContainer, staggerItem } from '../utils/animations';
 
 export default function Shop() {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { products, loading } = useProducts();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [sortMode, setSortMode] = useState("featured");
 
   const categories = ["All", "Skincare", "Lifestyle", "Supplements", "Wellness", "Organic"];
-
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const res = await API.get('/get_products');
-        setProducts(Array.isArray(res.data) ? res.data : []);
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching products", error);
-        setLoading(false);
-      }
-    };
-    fetchProducts();
-  }, []);
 
   const filteredProducts = products.filter(p => {
     const name = String(p.name || '').toLowerCase();
@@ -185,13 +158,13 @@ export default function Shop() {
               {filteredProducts.length > 0 ? (
                 <motion.div 
                   key="grid"
-                  variants={container} 
+                  variants={staggerContainer} 
                   initial="hidden" 
                   animate="show" 
                   className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
                 >
                   {filteredProducts.map(p => (
-                    <motion.div variants={item} key={p._id || p.id}>
+                    <motion.div variants={staggerItem} key={p._id || p.id}>
                       <ProductCard product={p} />
                     </motion.div>
                   ))}

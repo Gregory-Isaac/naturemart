@@ -5,6 +5,10 @@ import { FiArrowRight, FiCheckCircle, FiChevronLeft, FiClock, FiLock, FiPhone, F
 import { useCart }                                                                             from "../context/CartContext";
 import { Link, useNavigate }                                                                   from "react-router-dom";
 import { getImageUrl, handleImageFallback }                                                    from "../utils/imageUrl";
+import { calculateOrderTotals }                                                                 from "../utils/cartCalculations";
+import formatPrice                                                                              from "../utils/formatPrice";
+import EmptyState                                                                               from "../components/EmptyState";
+import OrderSummaryLines                                                                        from "../components/OrderSummaryLines";
 
 export default function Checkout() {
   const { cart, clearCart }   = useCart();
@@ -13,10 +17,7 @@ export default function Checkout() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus]   = useState(null);
 
-  const subtotal = cart.reduce((acc, item) => acc + (item.price * (item.quantity || 1)), 0);
-  const shipping = subtotal > 100 ? 0 : 15;
-  const tax      = subtotal * 0.08;
-  const total    = subtotal + shipping + tax;
+  const { subtotal, shipping, tax, total } = calculateOrderTotals(cart);
 
   const normalizePhone = (value) => {
     const digits = value.replace(/\D/g, "");
@@ -61,16 +62,14 @@ export default function Checkout() {
 
   if (cart.length === 0 && !status) {
     return (
-      <div  className = "premium-page min-h-screen flex flex-col items-center justify-center px-6 text-center">
-      <div  className = "premium-card premium-veil max-w-lg p-10">
-      <div  className = "relative z-10">
-      <FiLock className = "mx-auto mb-6 text-[var(--nm-gold)]" size = {42} />
-      <h1   className = "premium-heading text-4xl mb-4">Nothing to checkout</h1>
-      <p    className = "premium-muted mb-8">Your cart is empty. Add a few reserve essentials before starting payment.</p>
-      <Link to        = "/shop" className = "premium-button premium-button-primary">Back to Shop</Link>
-      </div>
-      </div>
-      </div>
+      <EmptyState
+        icon={FiLock}
+        iconSize={42}
+        heading="Nothing to checkout"
+        description="Your cart is empty. Add a few reserve essentials before starting payment."
+        linkTo="/shop"
+        linkLabel="Back to Shop"
+      />
     );
   }
 
@@ -151,7 +150,7 @@ export default function Checkout() {
                     <div className = "w-6 h-6 border-3 border-black/20 border-t-black rounded-full animate-spin" />
                   ) : (
                     <>
-                      <span>Pay ${total.toFixed(2)} Now</span>
+                      <span>Pay {formatPrice(total)} Now</span>
                       <FiArrowRight />
                     </>
                   )}
@@ -200,32 +199,17 @@ export default function Checkout() {
                     </div>
                     <div className = "flex-1">
                     <h4  className = "text-sm font-bold text-white mb-1 line-clamp-1">{item.name}</h4>
-                    <p   className = "text-xs text-[var(--nm-muted)]">{item.quantity || 1} x ${Number(item.price || 0).toFixed(2)}</p>
+                    <p   className = "text-xs text-[var(--nm-muted)]">{item.quantity || 1} x {formatPrice(item.price)}</p>
                     </div>
                     <div className = "text-right">
-                    <p   className = "text-sm font-bold text-white">${((item.quantity || 1) * Number(item.price || 0)).toFixed(2)}</p>
+                    <p   className = "text-sm font-bold text-white">{formatPrice((item.quantity || 1) * Number(item.price || 0))}</p>
                     </div>
                   </div>
                 ))}
               </div>
 
-              <div className = "space-y-4 pt-8 border-t border-white/5">
-              <div className = "flex justify-between text-[var(--nm-muted)] text-sm">
-                  <span>Subtotal</span>
-                  <span className = "text-white font-medium">${subtotal.toFixed(2)}</span>
-                </div>
-                <div className = "flex justify-between text-[var(--nm-muted)] text-sm">
-                  <span>Shipping</span>
-                  <span className = "text-white font-medium">${shipping.toFixed(2)}</span>
-                </div>
-                <div className = "flex justify-between text-[var(--nm-muted)] text-sm">
-                  <span>Estimated Tax</span>
-                  <span className = "text-white font-medium">${tax.toFixed(2)}</span>
-                </div>
-                <div  className = "pt-4 flex justify-between items-end">
-                <span className = "text-[var(--nm-muted)] font-bold uppercase tracking-widest text-[10px]">Grand Total</span>
-                <span className = "text-4xl font-black text-white">${total.toFixed(2)}</span>
-                </div>
+              <div className = "pt-8 border-t border-white/5">
+                <OrderSummaryLines subtotal={subtotal} shipping={shipping} tax={tax} total={total} variant="compact" />
               </div>
             </div>
 

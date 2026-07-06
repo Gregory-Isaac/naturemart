@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { GoogleLogin } from '@react-oauth/google';
-import { FiGithub } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
+import OAuthButtons, { handleGithubRedirect } from '../components/OAuthButtons';
+import FormAlert from '../components/FormAlert';
+import useAuthCallback from '../hooks/useAuthCallback';
 
 export default function Signup() {
   const [name, setName] = useState('');
@@ -12,36 +13,10 @@ export default function Signup() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [searchParams] = useSearchParams();
-  
+
   const { signup, googleLogin, githubLogin } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const code = searchParams.get('code');
-    if (code) {
-      handleGithubCallback(code);
-    }
-  }, [searchParams]);
-
-  const handleGithubCallback = async (code) => {
-    setLoading(true);
-    setError('');
-    const res = await githubLogin(code);
-    setLoading(false);
-    
-    if (res.success) {
-      navigate('/');
-    } else {
-      setError(res.message);
-    }
-  };
-
-  const handleGithubLogin = () => {
-    const clientId = "YOUR_GITHUB_CLIENT_ID_HERE";
-    const redirectUri = window.location.origin + "/login"; // Redirect to login page to handle the callback
-    window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=user:email`;
-  };
+  const { handleGoogleSuccess } = useAuthCallback({ githubLogin, googleLogin, setLoading, setError });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -59,23 +34,6 @@ export default function Signup() {
     }
   };
 
-  const handleGoogleSuccess = async (credentialResponse) => {
-    setLoading(true);
-    setError('');
-    const res = await googleLogin(credentialResponse.credential);
-    setLoading(false);
-    
-    if (res.success) {
-      navigate('/');
-    } else {
-      setError(res.message);
-    }
-  };
-
-  const handleGoogleError = () => {
-    setError('Google Sign In failed. Please try again.');
-  };
-
   return (
     <div className="min-h-[80vh] flex items-center justify-center relative px-6 py-12">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-emerald-500/10 rounded-full blur-[150px] pointer-events-none" />
@@ -90,11 +48,7 @@ export default function Signup() {
           <p className="text-gray-400">Create your NatureMart account</p>
         </div>
 
-        {error && (
-          <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-xl mb-6 text-sm">
-            {error}
-          </div>
-        )}
+        <FormAlert message={error} />
 
         {success ? (
           <div className="bg-emerald-500/10 border border-emerald-500/50 text-emerald-400 px-4 py-6 rounded-xl mb-6 text-center">
@@ -149,35 +103,12 @@ export default function Signup() {
               </button>
             </form>
 
-            <div className="relative my-8">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-white/10"></div>
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-[#111] px-4 text-gray-500">Or continue with</span>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex justify-center w-full">
-                <GoogleLogin
-                  onSuccess={handleGoogleSuccess}
-                  onError={handleGoogleError}
-                  theme="filled_black"
-                  shape="pill"
-                  width="100%"
-                />
-              </div>
-
-              <button 
-                onClick={handleGithubLogin}
-                disabled={loading}
-                className="w-full bg-[#24292e] text-white font-semibold py-2.5 rounded-full flex items-center justify-center gap-3 hover:bg-[#2c3238] transition-colors border border-white/10"
-              >
-                <FiGithub size={20} />
-                <span>Continue with GitHub</span>
-              </button>
-            </div>
+            <OAuthButtons
+              onGoogleSuccess={handleGoogleSuccess}
+              onGoogleError={() => setError('Google Sign In failed. Please try again.')}
+              onGithubClick={handleGithubRedirect}
+              loading={loading}
+            />
           </>
         )}
 

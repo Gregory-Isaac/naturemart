@@ -11,69 +11,39 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     if (token) {
-      // In a real app we would fetch the user profile from the backend
-      // For now we trust the token in localStorage
       const savedUser = localStorage.getItem('user');
       if (savedUser) setUser(JSON.parse(savedUser));
     }
   }, [token]);
 
-  const login = async (email, password) => {
+  const saveSession = (newToken, userData) => {
+    setToken(newToken);
+    setUser(userData);
+    localStorage.setItem('token', newToken);
+    localStorage.setItem('user', JSON.stringify(userData));
+  };
+
+  const authRequest = async (endpoint, payload, fallbackMsg) => {
     try {
-      const res = await API.post('/signin', { email, password });
+      const res = await API.post(endpoint, payload);
       if (res.data.success) {
-        const newToken = res.data.token;
-        const userData = res.data.user;
-        setToken(newToken);
-        setUser(userData);
-        localStorage.setItem('token', newToken);
-        localStorage.setItem('user', JSON.stringify(userData));
+        saveSession(res.data.token, res.data.user);
         return { success: true };
-      } else {
-        return { success: false, message: res.data.message };
       }
+      return { success: false, message: res.data.message };
     } catch (error) {
-      return { success: false, message: error.response?.data?.message || 'Login failed' };
+      return { success: false, message: error.response?.data?.message || fallbackMsg };
     }
   };
 
-  const googleLogin = async (credential) => {
-    try {
-      const res = await API.post('/google_auth', { credential });
-      if (res.data.success) {
-        const newToken = res.data.token;
-        const userData = res.data.user;
-        setToken(newToken);
-        setUser(userData);
-        localStorage.setItem('token', newToken);
-        localStorage.setItem('user', JSON.stringify(userData));
-        return { success: true };
-      } else {
-        return { success: false, message: res.data.message };
-      }
-    } catch (error) {
-      return { success: false, message: error.response?.data?.message || 'Google login failed' };
-    }
-  };
+  const login = (email, password) =>
+    authRequest('/signin', { email, password }, 'Login failed');
 
-  const githubLogin = async (code) => {
-    try {
-      const res = await API.post('/github_auth', { code });
-      if (res.data.success) {
-        const newToken = res.data.token;
-        const userData = res.data.user;
-        setToken(newToken);
-        setUser(userData);
-        localStorage.setItem('token', newToken);
-        localStorage.setItem('user', JSON.stringify(userData));
-        return { success: true };
-      } else {
-        return { success: false, message: res.data.message };
-      }
-    } catch (error) {
-      return { success: false, message: error.response?.data?.message || 'GitHub login failed' };
-    }
-  };
+  const googleLogin = (credential) =>
+    authRequest('/google_auth', { credential }, 'Google login failed');
+
+  const githubLogin = (code) =>
+    authRequest('/github_auth', { code }, 'GitHub login failed');
 
   const signup = async (name, email, password) => {
     try {
@@ -99,11 +69,7 @@ export const AuthProvider = ({ children }) => {
       avatar: 'https://i.pravatar.cc/150?u=premium',
       role: 'premium'
     };
-    const mockToken = 'demo-token-123';
-    setToken(mockToken);
-    setUser(mockUser);
-    localStorage.setItem('token', mockToken);
-    localStorage.setItem('user', JSON.stringify(mockUser));
+    saveSession('demo-token-123', mockUser);
     return { success: true };
   };
 

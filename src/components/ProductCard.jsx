@@ -6,13 +6,12 @@ import { FiPlus, FiHeart, FiArrowUpRight } from 'react-icons/fi';
 import { useWishlist } from '../context/WishlistContext';
 import { useNotification } from './Notification';
 import { getImageUrl, handleImageFallback } from '../utils/imageUrl';
+import formatPrice from '../utils/formatPrice';
 
 export default function ProductCard({ product }) {
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
   const { addNotification } = useNotification();
-
-  const price = Number(product.price || 0);
 
   const handleAddToCart = (event) => {
     event.preventDefault();
@@ -74,7 +73,7 @@ export default function ProductCard({ product }) {
 
           <div className="mt-auto flex items-center justify-between gap-4 border-t border-white/10 pt-4">
             <span className="text-2xl font-black text-[var(--nm-ink)]">
-              ${price.toFixed(2)}
+              {formatPrice(product.price)}
             </span>
             <motion.button
               whileHover={{ scale: 1.04 }}
