@@ -725,7 +725,7 @@ def get_conversations(current_user_id):
         connection = get_db_connection()
         with connection.cursor() as cursor:
             sql = """
-                SELECT DISTINCT u.id, u.name, u.email 
+                SELECT DISTINCT u.id, u.name, u.email, u.phone, u.created_at
                 FROM users u
                 JOIN messages m ON (u.id = m.sender_id OR u.id = m.receiver_id)
                 WHERE (m.sender_id = %s OR m.receiver_id = %s)
@@ -733,7 +733,78 @@ def get_conversations(current_user_id):
             """
             cursor.execute(sql, (current_user_id, current_user_id, current_user_id))
             conversations = cursor.fetchall()
+
+            for convo in conversations:
+                cursor.execute(
+                    """SELECT message, createdAt, sender_id FROM messages
+                       WHERE (sender_id=%s AND receiver_id=%s) OR (sender_id=%s AND receiver_id=%s)
+                       ORDER BY createdAt DESC LIMIT 1""",
+                    (current_user_id, convo['id'], convo['id'], current_user_id))
+                last = cursor.fetchone()
+                convo['last_message'] = last['message'] if last else None
+                convo['last_message_time'] = last['createdAt'] if last else None
+                convo['last_message_sender'] = last['sender_id'] if last else None
+
+                cursor.execute(
+                    "SELECT COUNT(*) as cnt FROM messages WHERE sender_id=%s AND receiver_id=%s AND is_read=0",
+                    (convo['id'], current_user_id))
+                row = cursor.fetchone()
+                convo['unread_count'] = row['cnt'] if row else 0
+
         return jsonify({"success": True, "conversations": conversations})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        if connection:
+            connection.close()
+
+@app.route("/api/users", methods=["GET"])
+@token_required
+def list_users(current_user_id):
+    connection = None
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT id, name, email, phone, created_at FROM users WHERE id != %s ORDER BY name ASC",
+                (current_user_id,))
+            users = cursor.fetchall()
+        return jsonify({"success": True, "users": users})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+    finally:
+        if connection:
+            connection.close()
+
+@app.route("/api/users/<int:user_id>", methods=["GET"])
+@token_required
+def get_user_detail(current_user_id, user_id):
+    connection = None
+    try:
+        connection = get_db_connection()
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT id, name, email, phone, created_at FROM users WHERE id=%s",
+                (user_id,))
+            user = cursor.fetchone()
+            if not user:
+                return jsonify({"success": False, "message": "User not found"}), 404
+
+            cursor.execute(
+                "SELECT COUNT(*) as cnt FROM messages WHERE (sender_id=%s AND receiver_id=%s) OR (sender_id=%s AND receiver_id=%s)",
+                (current_user_id, user_id, user_id, current_user_id))
+            row = cursor.fetchone()
+            user['message_count'] = row['cnt'] if row else 0
+
+            cursor.execute(
+                """SELECT createdAt FROM messages
+                   WHERE (sender_id=%s AND receiver_id=%s) OR (sender_id=%s AND receiver_id=%s)
+                   ORDER BY createdAt DESC LIMIT 1""",
+                (current_user_id, user_id, user_id, current_user_id))
+            last = cursor.fetchone()
+            user['last_active'] = last['createdAt'] if last else user['created_at']
+
+        return jsonify({"success": True, "user": user})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
     finally:
