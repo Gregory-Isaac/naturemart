@@ -14,7 +14,12 @@ import {
   FiStar,
   FiSun,
   FiTruck,
+<<<<<<< HEAD
   FiZap,
+=======
+  FiSparkles,
+  FiLeaf,
+>>>>>>> e9c418e2404a2ae1c9b0e6230e3647f5f5bfee61
 } from "react-icons/fi";
 import { FaCrown } from "react-icons/fa";
 import API from "../api/client";
@@ -658,6 +663,7 @@ export default function Home() {
     }
   }, [addNotification]);
 
+<<<<<<< HEAD
   return (
     <div className="home-premium min-h-screen bg-[#080807] text-white">
       {/* HERO SECTION */}
@@ -689,12 +695,84 @@ export default function Home() {
             </p>
             <div className="home-actions">
               <Link to="/shop" className="home-button home-button--primary">
+=======
+  // Enchanting animation variants
+  const enchantVariants = {
+    initial: { opacity: 0, y: 24, scale: 0.92 },
+    animate: { opacity: 1, y: 0, scale: 1 },
+  };
+
+  const floatingVariants = {
+    animate: {
+      y: [0, -12, 0],
+      transition: {
+        duration: 4,
+        repeat: Infinity,
+        ease: "easeInOut",
+      },
+    },
+  };
+
+  const glowVariants = {
+    animate: {
+      boxShadow: [
+        "0 0 20px rgba(167, 139, 250, 0.3)",
+        "0 0 40px rgba(167, 139, 250, 0.6)",
+        "0 0 20px rgba(167, 139, 250, 0.3)",
+      ],
+      transition: {
+        duration: 3,
+        repeat: Infinity,
+      },
+    },
+  };
+
+  return (
+    <div className="home-premium min-h-screen bg-[#080807] text-white">
+      {/* Animated Background Orbs */}
+      <div className="home-magic-orbs">
+        <div className="magic-orb orb-1" />
+        <div className="magic-orb orb-2" />
+        <div className="magic-orb orb-3" />
+      </div>
+
+      <section className="home-hero home-hero--enchanted">
+        <img src={heroImage} alt="Premium natural skincare bottles" className="home-hero__image" />
+        <div className="home-hero__shade" />
+
+        <div className="home-shell home-hero__content">
+          <motion.div
+            initial={enchantVariants.initial}
+            animate={enchantVariants.animate}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="home-hero__copy"
+          >
+            <span className="home-kicker home-kicker--enchanted">
+              <FiSparkles className="kicker-icon" />
+              NatureMart Enchanted
+              <FiSparkles className="kicker-icon" />
+            </span>
+            <h1 className="home-hero-title-enchanted">
+              Where nature's essence meets pure magic
+            </h1>
+            <p className="home-hero-description-enchanted">
+              Discover our curated collection of premium natural products, each infused with the power to transform your daily rituals into moments of enchantment.
+            </p>
+            <div className="home-actions">
+              <Link to="/shop" className="home-button home-button--primary home-button--enchanted">
+>>>>>>> e9c418e2404a2ae1c9b0e6230e3647f5f5bfee61
                 <FiShoppingBag />
-                Shop Collection
+                Explore the Magic
               </Link>
+<<<<<<< HEAD
               <Link to="/about" className="home-button home-button--ghost">
                 <FiHeart />
                 Our Standard
+=======
+              <Link to="/about" className="home-button home-button--ghost home-button--enchanted-ghost">
+                <FiLeaf />
+                Our Enchantment
+>>>>>>> e9c418e2404a2ae1c9b0e6230e3647f5f5bfee61
               </Link>
             </div>
 
@@ -702,6 +780,7 @@ export default function Home() {
             <SignalRow signals={collectionSignals} />
           </motion.div>
 
+<<<<<<< HEAD
           <HeroShowcase products={heroProducts} isLoading={loading} />
         </div>
       </section>
@@ -711,10 +790,68 @@ export default function Home() {
         <div>
           {[...pressNotes, ...pressNotes].map((note, index) => (
             <span key={`${note}-${index}`}>{note}</span>
+=======
+          <motion.div
+            initial={enchantVariants.initial}
+            animate={enchantVariants.animate}
+            transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+            className="home-hero__panel home-hero__panel--enchanted"
+            variants={glowVariants}
+            animate="animate"
+          >
+            <div>
+              <span className="home-panel-label">✨ Trending Enchantments ✨</span>
+              <h2>This Week's Magical Favorites</h2>
+            </div>
+            <div className="home-mini-products">
+              {loading
+                ? [0, 1, 2].map((item) => <div key={item} className="home-mini-product home-skeleton" />)
+                : heroProducts.map((product, index) => (
+                    <motion.div
+                      key={product.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                    >
+                      <Link to={`/product/${product.id}`} className="home-mini-product home-mini-product--enchanted">
+                        <img src={getImageUrl(product.image)} alt={product.name} onError={handleImageFallback(product, index)} />
+                        <div>
+                          <span>{product.category}</span>
+                          <strong>{product.name}</strong>
+                        </div>
+                      </Link>
+                    </motion.div>
+                  ))}
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      <section className="home-proof home-proof--enchanted">
+        <div className="home-shell home-proof__grid">
+          {[
+            { icon: <FiAward />, label: "Curated Enchanted Goods" },
+            { icon: <FiShield />, label: "Magically Verified" },
+            { icon: <FiTruck />, label: "Ethereal Delivery" },
+            { icon: <FiPackage />, label: "Mystical Packaging" },
+          ].map((item, index) => (
+            <motion.div
+              key={item.label}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-80px" }}
+              transition={{ delay: index * 0.1 }}
+              className="home-proof__item home-proof__item--enchanted"
+            >
+              {item.icon}
+              <span>{item.label}</span>
+            </motion.div>
+>>>>>>> e9c418e2404a2ae1c9b0e6230e3647f5f5bfee61
           ))}
         </div>
       </section>
 
+<<<<<<< HEAD
       {/* PROOF SECTION */}
       <section className="home-proof">
         <ProofGrid items={proofItems} />
@@ -747,11 +884,44 @@ export default function Home() {
           <div className="home-builder-grid">
             {ritualBuilder.map((ritual, index) => (
               <RitualBuilderCard key={ritual.title} ritual={ritual} index={index} />
+=======
+      <section className="home-section home-section--enchanted">
+        <div className="home-shell">
+          <div className="home-section-heading">
+            <span className="home-kicker home-kicker--section">
+              <FiSparkles /> The Enchanted Collection
+            </span>
+            <h2>Explore magical categories & rituals</h2>
+            <Link to="/shop" className="home-text-link home-text-link--enchanted">
+              View all <FiArrowRight />
+            </Link>
+          </div>
+
+          <div className="home-category-grid">
+            {categoryStories.map((category, index) => (
+              <motion.div
+                key={category.name}
+                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                viewport={{ once: true, margin: "-80px" }}
+                transition={{ delay: index * 0.08, duration: 0.6 }}
+                className="home-category home-category--enchanted"
+                whileHover={{ y: -8 }}
+              >
+                <motion.img src={category.image} alt={`${category.name} collection`} variants={floatingVariants} animate="animate" />
+                <div>
+                  <span>{categoryCounts[category.name] || 10} products</span>
+                  <h3>{category.name}</h3>
+                  <p>{category.copy}</p>
+                </div>
+              </motion.div>
+>>>>>>> e9c418e2404a2ae1c9b0e6230e3647f5f5bfee61
             ))}
           </div>
         </div>
       </section>
 
+<<<<<<< HEAD
       {/* COLLECTION SECTION */}
       <section className="home-section">
         <div className="home-shell">
@@ -826,33 +996,134 @@ export default function Home() {
           <div className="home-editorial__copy">
             <span className="home-kicker">Our Standard</span>
             <h2>Botanical performance without the visual noise.</h2>
-            <p>
-              Every item is chosen for ingredient clarity, functional value, and a product experience that feels calm,
-              useful, and beautiful on the shelf.
-            </p>
-            <div className="home-standard-list">
-              {standardItems.map((item) => (
-                <div key={item.text}>
-                  {item.icon}
-                  <span>{item.text}</span>
-                </div>
+=======
+      <section className="home-section home-section--featured home-section--featured-enchanted">
+        <div className="home-shell">
+          <div className="home-section-heading">
+            <span className="home-kicker home-kicker--featured">✨ Enchanted Selections ✨</span>
+            <h2>Premium magic for everyday enchantment</h2>
+          </div>
+
+          {loading ? (
+            <div className="home-product-grid">
+              {[0, 1, 2, 3].map((item) => (
+                <div key={item} className="home-product home-skeleton" />
               ))}
             </div>
+          ) : (
+            <div className="home-product-grid">
+              {featuredProducts.map((product, index) => (
+                <motion.article
+                  key={product.id}
+                  initial={{ opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-80px" }}
+                  transition={{ delay: index * 0.06 }}
+                  className="home-product home-product--enchanted"
+                  whileHover={{ y: -12, boxShadow: "0 30px 60px rgba(167, 139, 250, 0.3)" }}
+                >
+                  <Link to={`/product/${product.id}`} className="home-product__image home-product__image--enchanted">
+                    <motion.img 
+                      src={getImageUrl(product.image)} 
+                      alt={product.name} 
+                      onError={handleImageFallback(product, index)}
+                      whileHover={{ scale: 1.12, rotate: 3 }}
+                      transition={{ type: "spring", stiffness: 300 }}
+                    />
+                  </Link>
+                  <div className="home-product__body">
+                    <span>{product.category}</span>
+                    <h3>{product.name}</h3>
+                    <p>{product.description}</p>
+                    <div className="home-product__footer">
+                      <strong>${Number(product.price).toFixed(2)}</strong>
+                      <motion.button 
+                        type="button" 
+                        onClick={() => handleAddToCart(product)} 
+                        aria-label={`Add ${product.name} to cart`}
+                        whileHover={{ scale: 1.1, rotate: -5 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <FiShoppingBag />
+                      </motion.button>
+                    </div>
+                  </div>
+                </motion.article>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="home-editorial home-editorial--enchanted">
+        <div className="home-shell home-editorial__grid">
+          <motion.div
+            initial={{ opacity: 0, x: -40 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            className="home-editorial__copy"
+          >
+            <span className="home-kicker">Our Enchanted Standard</span>
+            <h2>Pure essence, pure magic, pure you.</h2>
+>>>>>>> e9c418e2404a2ae1c9b0e6230e3647f5f5bfee61
+            <p>
+              Every item is enchanted with purpose, crafted with intention, and selected for ingredient clarity, functional value, and a product experience that transforms your daily rituals into moments of pure enchantment and natural beauty.
+            </p>
+            <div className="home-standard-list">
+<<<<<<< HEAD
+              {standardItems.map((item) => (
+                <div key={item.text}>
+=======
+              {[
+                { icon: <FiCheckCircle />, text: "Ingredient-first enchantment" },
+                { icon: <FiStar />, text: "Magical product visuals" },
+                { icon: <FiClock />, text: "Rituals for daily enchantment" },
+              ].map((item) => (
+                <motion.div 
+                  key={item.text}
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.1 }}
+                >
+>>>>>>> e9c418e2404a2ae1c9b0e6230e3647f5f5bfee61
+                  {item.icon}
+                  <span>{item.text}</span>
+                </motion.div>
+              ))}
+            </div>
+<<<<<<< HEAD
           </div>
           <div className="home-ritual-grid">
             {rituals.map((ritual) => (
               <div className="home-ritual" key={ritual.title}>
                 <img src={ritual.image} alt={ritual.title} loading="lazy" />
+=======
+          </motion.div>
+          <div className="home-ritual-grid">
+            {rituals.map((ritual, index) => (
+              <motion.div 
+                key={ritual.title} 
+                className="home-ritual home-ritual--enchanted"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                whileHover={{ scale: 1.05 }}
+              >
+                <motion.img src={ritual.image} alt={ritual.title} variants={floatingVariants} animate="animate" />
+>>>>>>> e9c418e2404a2ae1c9b0e6230e3647f5f5bfee61
                 <div>
                   <span>{ritual.meta}</span>
                   <h3>{ritual.title}</h3>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
+<<<<<<< HEAD
       {/* PROVENANCE SECTION */}
       <section className="home-provenance">
         <div className="home-shell">
@@ -867,11 +1138,46 @@ export default function Home() {
                 <h3>{title}</h3>
                 <p>{copy}</p>
               </div>
+=======
+      <section className="home-section home-reserve home-reserve--enchanted">
+        <div className="home-shell">
+          <div className="home-section-heading">
+            <span className="home-kicker">✨ Enchanted Sets ✨</span>
+            <h2>Curated collections for magical living</h2>
+          </div>
+
+          <div className="home-reserve__grid">
+            {reserveSets.map((set, index) => (
+              <motion.article
+                key={set.title}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-80px" }}
+                transition={{ delay: index * 0.12 }}
+                className="home-reserve-card home-reserve-card--enchanted"
+                whileHover={{ y: -12 }}
+              >
+                <motion.div className="home-reserve-card__media" whileHover={{ scale: 1.08 }}>
+                  <motion.img src={set.image} alt={set.title} variants={floatingVariants} animate="animate" />
+                </motion.div>
+                <div className="home-reserve-card__body">
+                  <span>{set.meta}</span>
+                  <h3>{set.title}</h3>
+                  <p>{set.copy}</p>
+                  <motion.div whileHover={{ x: 4 }} className="home-text-link home-text-link--enchanted">
+                    <Link to="/shop">
+                      Discover the magic <FiArrowRight />
+                    </Link>
+                  </motion.div>
+                </div>
+              </motion.article>
+>>>>>>> e9c418e2404a2ae1c9b0e6230e3647f5f5bfee61
             ))}
           </div>
         </div>
       </section>
 
+<<<<<<< HEAD
       {/* RESERVE SETS SECTION */}
       <section className="home-section home-reserve">
         <div className="home-shell">
@@ -943,6 +1249,30 @@ export default function Home() {
             <h2>New drops, calm routines, better shelves.</h2>
           </div>
           <NewsletterForm onSubmit={handleNewsletterSubmit} />
+=======
+      <section className="home-newsletter home-newsletter--enchanted">
+        <div className="home-shell home-newsletter__inner">
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+          >
+            <span className="home-kicker">✨ Enchanted Notes ✨</span>
+            <h2>Magical drops, rituals & pure enchantment</h2>
+          </motion.div>
+          <motion.form
+            className="home-newsletter__form home-newsletter__form--enchanted"
+            onSubmit={(event) => event.preventDefault()}
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+          >
+            <input type="email" placeholder="Enter your enchanted email..." aria-label="Email address" />
+            <motion.button type="submit" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              Enchant Me <FiArrowRight />
+            </motion.button>
+          </motion.form>
+>>>>>>> e9c418e2404a2ae1c9b0e6230e3647f5f5bfee61
         </div>
       </section>
     </div>
