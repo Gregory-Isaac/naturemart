@@ -4,6 +4,7 @@ import { AnimatePresence } from 'framer-motion';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import PageTransitions from './components/PageTransitions';
+import MagicParticles from './components/MagicParticles';
 import Home from './pages/Home';
 import Shop from './pages/Shop';
 import Product from './pages/Product';
@@ -27,10 +28,13 @@ function App() {
   const location = useLocation();
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen relative">
+      {/* Enchanted Magic Particles - adds magical ambient effect */}
+      <MagicParticles />
+      
       <Navbar />
       
-      <main className="flex-grow">
+      <main className="flex-grow relative z-10">
         <AnimatePresence mode="wait">
           <Routes location={location} key={location.pathname}>
             <Route path="/" element={<PageTransitions><Home /></PageTransitions>} />
