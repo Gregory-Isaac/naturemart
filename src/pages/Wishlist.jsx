@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { FiHeart, FiShoppingBag } from 'react-icons/fi';
 import { useWishlist } from '../context/WishlistContext';
 import ProductCard from '../components/ProductCard';

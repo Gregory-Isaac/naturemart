@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import API from '../api/client';
-import { FiPackage, FiTruck, FiCheck, FiSearch, FiClock, FiMapPin } from 'react-icons/fi';
+import { FiPackage, FiTruck, FiCheck, FiSearch, FiClock } from 'react-icons/fi';
 
 const statuses = [
   { id: 'pending', label: 'Order Placed', icon: FiPackage },

@@ -632,6 +632,13 @@ def chat():
         return jsonify({"success": False, "message": "Message is missing"}), 400
         
     try:
+        # If Gemini is not configured, respond with general NatureMart info so the bot still works.
+        if not os.getenv("GEMINI_API_KEY"):
+            return jsonify({
+                "success": True,
+                "response": "I’m running in offline mode right now (GEMINI_API_KEY is not set). I can still help with general info about NatureMart products and services. What would you like to know? 🌿"
+            })
+
         # Define the system prompt/context for NatureMart
         system_context = """
         You are the NatureMart AI Assistant, a helpful and premium brand ambassador for NatureMart.
@@ -660,11 +667,11 @@ def chat():
         bot_response = response.text
         
         return jsonify({"success": True, "response": bot_response})
-    except Exception as e:
+    except Exception:
         # Fallback to simple response if Gemini fails or API key is missing
         return jsonify({
-            "success": True, 
-            "response": "I'm currently in a limited mode, but I can tell you that NatureMart offers the finest organic products! How else can I assist you? 🌿"
+            "success": True,
+            "response": "Sorry—my AI service is temporarily unavailable. You can still ask about NatureMart products, shipping, payments, or order tracking. 🌿"
         })
 
 @app.route("/api/messages/send", methods=["POST"])

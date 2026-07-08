@@ -1,11 +1,11 @@
-import { Link, useLocation } from "react-router-dom";
-import { useState, useEffect } from "react";
-import { useCart } from "../context/CartContext";
-import { useAuth } from "../context/AuthContext";
-import { useWishlist } from "../context/WishlistContext";
-import { AnimatePresence, motion } from "framer-motion";
+import { Link, useLocation }                            from "react-router-dom";
+import { useState, useEffect }                          from "react";
+import { useCart }                                      from "../context/CartContext";
+import { useAuth }                                      from "../context/AuthContext";
+import { useWishlist }                                  from "../context/WishlistContext";
+import { AnimatePresence, motion }                      from "framer-motion";
 import { FiHeart, FiMenu, FiShoppingCart, FiUser, FiX } from "react-icons/fi";
-import API from "../api/client";
+import API                                              from "../api/client";
 
 export default function Navbar() {
   const { cart } = useCart();
@@ -17,6 +17,7 @@ export default function Navbar() {
   const links = [
     { name: "Home", path: "/" },
     { name: "Shop", path: "/shop" },
+    { name: "Ultra Premium", path: "/ultra-premium" },
     { name: "Admin", path: "/admin" },
     { name: "Track", path: "/track" },
     { name: "Messages", path: "/messages" },

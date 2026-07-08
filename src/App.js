@@ -1,10 +1,11 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence }            from 'framer-motion';
 
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import PageTransitions from './components/PageTransitions';
 import Home from './pages/Home';
+import UltraPremium from './pages/UltraPremium';
 import Shop from './pages/Shop';
 import Product from './pages/Product';
 import Login from './pages/Login';
@@ -49,6 +50,7 @@ function App() {
             <Route path="/profile" element={<PageTransitions><Profile /></PageTransitions>} />
             <Route path="/faq" element={<PageTransitions><FAQ /></PageTransitions>} />
             <Route path="/admin" element={<PageTransitions><AddProduct /></PageTransitions>} />
+            <Route path="/ultra-premium" element={<PageTransitions><UltraPremium /></PageTransitions>} />
             <Route path="/add-product" element={<PageTransitions><AddProduct /></PageTransitions>} />
           </Routes>
         </AnimatePresence>

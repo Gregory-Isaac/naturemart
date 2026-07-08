@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiUser, FiPackage, FiSettings, FiLogOut, FiMail, FiPhone, FiCalendar, FiClock } from 'react-icons/fi';
+import { FiUser, FiPackage, FiSettings, FiLogOut, FiCalendar, FiClock } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import API from '../api/client';
 

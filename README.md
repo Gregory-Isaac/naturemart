@@ -69,3 +69,12 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
 # naturemart
+
+## Deployment Configuration
+
+When deploying the frontend, make sure to set the following environment variables to point to your live backend:
+
+- `REACT_APP_API_BASE_URL`: The base URL of the API (e.g., `http://gregoryisaac.alwaysdata.net/api`)
+- `REACT_APP_API_ORIGIN`: The origin URL of the API for images and static assets (e.g., `http://gregoryisaac.alwaysdata.net`)
+
+By default, the application falls back to `http://gregoryisaac.alwaysdata.net/api` and `http://gregoryisaac.alwaysdata.net` respectively.

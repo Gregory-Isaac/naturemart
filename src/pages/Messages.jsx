@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React   ,                                        { useState, useEffect, useRef } from 'react';
 import { FiSend, FiUser, FiSearch, FiMoreVertical } from 'react-icons/fi';
-import API from '../api/client';
-import { useAuth } from '../context/AuthContext';
+import API                                          from '../api/client';
+import { useAuth }                                  from '../context/AuthContext';
 
 export default function Messages() {
   const { user } = useAuth();
@@ -67,10 +66,10 @@ export default function Messages() {
         message: newMessage
       });
       if (res.data.success) {
-        setMessages([...messages, { 
-          sender_id: user.id, 
-          message: newMessage, 
-          createdAt: new Date().toISOString() 
+        setMessages([...messages, {
+          sender_id: user.id,
+          message: newMessage,
+          createdAt: new Date().toISOString()
         }]);
         setNewMessage("");
       }
@@ -87,24 +86,36 @@ export default function Messages() {
     );
   }
 
+  const myInitial = (user?.name || "U").slice(0, 1).toUpperCase();
+
   return (
     <div className="min-h-screen pt-20 pb-10 px-6">
       <div className="max-w-7xl mx-auto h-[80vh] glass-panel rounded-[2.5rem] overflow-hidden flex border border-white/5 shadow-2xl">
-        
+
         {/* Sidebar - Conversations */}
         <div className="w-full md:w-80 lg:w-96 border-r border-white/5 flex flex-col bg-black/20">
           <div className="p-6 border-b border-white/5">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-emerald-500 to-lime-500 flex items-center justify-center text-black font-bold">
+                {myInitial}
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-white font-bold truncate">{user.name}</h3>
+                <p className="text-gray-500 text-xs truncate">{user.email}</p>
+              </div>
+            </div>
+
             <h2 className="text-2xl font-black tracking-tighter mb-4 text-white">Messages</h2>
             <div className="relative">
               <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-              <input 
-                type="text" 
+              <input
+                type="text"
                 placeholder="Search chats..."
                 className="w-full bg-white/5 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-emerald-500/50 transition-all"
               />
             </div>
           </div>
-          
+
           <div className="flex-grow overflow-y-auto">
             {loading ? (
               <div className="p-10 text-center text-gray-500 text-sm">Loading chats...</div>
@@ -141,14 +152,15 @@ export default function Messages() {
               <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-emerald-500 to-lime-500 flex items-center justify-center text-black font-bold">
-                    {selectedConvo.name[0]}
+                    {(selectedConvo.name || 'U').slice(0, 1)}
                   </div>
                   <div>
                     <h3 className="text-white font-bold">{selectedConvo.name}</h3>
+                    <span className="block text-[10px] text-gray-500">{selectedConvo.email}</span>
                     <span className="text-[10px] text-emerald-500 uppercase font-bold tracking-widest">Active Now</span>
                   </div>
                 </div>
-                <button className="p-2 text-gray-500 hover:text-white transition-colors">
+                <button className="p-2 text-gray-500 hover:text-white transition-colors" aria-label="More">
                   <FiMoreVertical size={20} />
                 </button>
               </div>
@@ -156,15 +168,17 @@ export default function Messages() {
               {/* Messages Area */}
               <div className="flex-grow overflow-y-auto p-6 space-y-4">
                 {messages.map((msg, idx) => (
-                  <div 
-                    key={idx} 
+                  <div
+                    key={idx}
                     className={`flex ${msg.sender_id === user.id ? 'justify-end' : 'justify-start'}`}
                   >
-                    <div className={`max-w-[70%] p-4 rounded-2xl text-sm ${
-                      msg.sender_id === user.id 
-                      ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-tr-none' 
-                      : 'bg-white/5 border border-white/5 text-gray-200 rounded-tl-none'
-                    }`}>
+                    <div
+                      className={`max-w-[70%] p-4 rounded-2xl text-sm ${
+                        msg.sender_id === user.id
+                          ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-tr-none'
+                          : 'bg-white/5 border border-white/5 text-gray-200 rounded-tl-none'
+                      }`}
+                    >
                       <p>{msg.message}</p>
                       <span className="text-[9px] opacity-50 mt-1 block">
                         {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -178,14 +192,14 @@ export default function Messages() {
               {/* Input Area */}
               <form onSubmit={handleSendMessage} className="p-6 bg-black/20 border-t border-white/5">
                 <div className="relative flex items-center">
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     placeholder="Write a message..."
                     className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 pr-16 text-white focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-gray-600 shadow-inner"
                   />
-                  <button 
+                  <button
                     type="submit"
                     className="absolute right-2 p-3 bg-gradient-to-r from-emerald-500 to-lime-500 rounded-xl text-black shadow-lg hover:scale-105 active:scale-95 transition-all"
                   >

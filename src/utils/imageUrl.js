@@ -1,8 +1,8 @@
-import aloeImage from "../images/aloe_vera_gel.png";
-import bambooImage from "../images/bamboo_toothbrush.png";
+import aloeImage     from "../images/aloe_vera_gel.png";
+import bambooImage   from "../images/bamboo_toothbrush.png";
 import lavenderImage from "../images/lavender_oil.png";
 
-const API_ORIGIN = "http://127.0.0.1:5001";
+const API_ORIGIN = process.env.REACT_APP_API_ORIGIN || "http://gregoryisaac.alwaysdata.net";
 const FALLBACK_IMAGE = "/images/bottle.png";
 const LOCAL_PRODUCT_IMAGES = [
   aloeImage,

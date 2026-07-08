@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { GoogleLogin } from '@react-oauth/google';
@@ -15,14 +15,7 @@ export default function Login() {
   const { login, googleLogin, githubLogin, devLogin } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const code = searchParams.get('code');
-    if (code) {
-      handleGithubCallback(code);
-    }
-  }, [searchParams]);
-
-  const handleGithubCallback = async (code) => {
+  const handleGithubCallback = useCallback(async (code) => {
     setLoading(true);
     setError('');
     const res = await githubLogin(code);
@@ -33,7 +26,14 @@ export default function Login() {
     } else {
       setError(res.message);
     }
-  };
+  }, [githubLogin, navigate]);
+
+  useEffect(() => {
+    const code = searchParams.get('code');
+    if (code) {
+      handleGithubCallback(code);
+    }
+  }, [searchParams, handleGithubCallback]);
 
   const handleGithubLogin = () => {
     const clientId = "YOUR_GITHUB_CLIENT_ID_HERE";
